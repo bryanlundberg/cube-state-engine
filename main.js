@@ -141,6 +141,91 @@ class CubeEngine {
   }
 
   /**
+   * Rotates the front (R) layer clockwise or counterclockwise.
+   */
+  rotateR(clockwise = true) {
+    if (clockwise) {
+      this.MOVES.push("R");
+
+      // Rotate the right layer counterclockwise
+      this.R = [
+        this.R[6],
+        this.R[3],
+        this.R[0],
+        this.R[7],
+        this.R[4],
+        this.R[1],
+        this.R[8],
+        this.R[5],
+        this.R[2],
+      ];
+
+      // Affects adjacent layers (front, top, bottom, back)
+      // Temporary to not overwrite values ​​while modifying layers
+
+      const tempFront = [this.G[2], this.G[5], this.G[8]];
+      const tempTop = [this.W[2], this.W[5], this.W[8]];
+      const tempBottom = [this.Y[2], this.Y[5], this.Y[8]];
+      const tempBack = [this.B[6], this.B[3], this.B[0]];
+
+      // Ajustamos las capas adyacentes
+      this.G[2] = tempBottom[0];
+      this.G[5] = tempBottom[1];
+      this.G[8] = tempBottom[2];
+
+      this.W[2] = tempFront[0];
+      this.W[5] = tempFront[1];
+      this.W[8] = tempFront[2];
+
+      this.B[6] = tempTop[0];
+      this.B[3] = tempTop[1];
+      this.B[0] = tempTop[2];
+
+      this.Y[2] = tempBack[0];
+      this.Y[5] = tempBack[1];
+      this.Y[8] = tempBack[2];
+    } else {
+      this.MOVES.push("R'");
+
+      // Rotate the right face (R) counterclockwise
+      this.R = [
+        this.R[2],
+        this.R[5],
+        this.R[8],
+        this.R[1],
+        this.R[4],
+        this.R[7],
+        this.R[0],
+        this.R[3],
+        this.R[6],
+      ];
+
+      // Affects adjacent layers (front, top, bottom, back)
+      const tempFront = [this.G[2], this.G[5], this.G[8]];
+      const tempTop = [this.W[2], this.W[5], this.W[8]];
+      const tempBottom = [this.Y[2], this.Y[5], this.Y[8]];
+      const tempBack = [this.B[6], this.B[3], this.B[0]];
+
+      // Adjust the adjacent layers
+      this.G[2] = tempTop[0];
+      this.G[5] = tempTop[1];
+      this.G[8] = tempTop[2];
+
+      this.W[2] = tempBack[0];
+      this.W[5] = tempBack[1];
+      this.W[8] = tempBack[2];
+
+      this.B[6] = tempBottom[0];
+      this.B[3] = tempBottom[1];
+      this.B[0] = tempBottom[2];
+
+      this.Y[2] = tempFront[0];
+      this.Y[5] = tempFront[1];
+      this.Y[8] = tempFront[2];
+    }
+  }
+
+  /**
    * Logs the current state of the cube.
    */
   state() {
@@ -159,7 +244,7 @@ class CubeEngine {
 }
 
 const v = new CubeEngine();
-
+v.state();
 /**
  * Key listener for cube movements.
  */
@@ -169,6 +254,8 @@ addEventListener("keyup", (e) => {
     j: () => v.rotateU(true), // J -> U
     g: () => v.rotateF(false), // G -> F'
     h: () => v.rotateF(true), // H -> F
+    i: () => v.rotateR(true), // I -> R
+    k: () => v.rotateR(false), // K -> R'
   };
 
   const move = movesMap[e.key.toLowerCase()];
