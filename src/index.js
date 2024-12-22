@@ -308,7 +308,7 @@ export class CubeEngine {
       // Save adjacent pieces for swapping
       const tempTop = [this.W[0], this.W[3], this.W[6]];
       const tempFront = [this.G[0], this.G[3], this.G[6]];
-      const tempBottom = [this.Y[6], this.Y[3], this.Y[0]];
+      const tempBottom = [this.Y[0], this.Y[3], this.Y[6]];
       const tempBack = [this.B[8], this.B[5], this.B[2]]; // Inverted order when interacting with the left face
 
       // Update affected pieces
@@ -320,13 +320,13 @@ export class CubeEngine {
       this.G[3] = tempTop[1];
       this.G[6] = tempTop[2];
 
-      this.Y[6] = tempFront[2];
-      this.Y[3] = tempFront[1];
       this.Y[0] = tempFront[0];
+      this.Y[3] = tempFront[1];
+      this.Y[6] = tempFront[2];
 
-      this.B[8] = tempBottom[2];
+      this.B[2] = tempBottom[2];
       this.B[5] = tempBottom[1];
-      this.B[2] = tempBottom[0];
+      this.B[8] = tempBottom[0];
     } else {
       this.MOVES.push("L'");
 
@@ -346,7 +346,7 @@ export class CubeEngine {
       // Save adjacent pieces for swapping
       const tempTop = [this.W[0], this.W[3], this.W[6]];
       const tempFront = [this.G[0], this.G[3], this.G[6]];
-      const tempBottom = [this.Y[6], this.Y[3], this.Y[0]];
+      const tempBottom = [this.Y[0], this.Y[3], this.Y[6]];
       const tempBack = [this.B[8], this.B[5], this.B[2]]; // Inverted order when interacting with the left face
 
       // Update affected pieces
@@ -354,17 +354,17 @@ export class CubeEngine {
       this.W[3] = tempFront[1];
       this.W[6] = tempFront[2];
 
-      this.G[0] = tempBottom[2];
+      this.G[0] = tempBottom[0];
       this.G[3] = tempBottom[1];
-      this.G[6] = tempBottom[0];
+      this.G[6] = tempBottom[2];
 
-      this.Y[6] = tempBack[2];
-      this.Y[3] = tempBack[1];
       this.Y[0] = tempBack[0];
+      this.Y[3] = tempBack[1];
+      this.Y[6] = tempBack[2];
 
-      this.B[8] = tempTop[2];
+      this.B[2] = tempTop[2];
       this.B[5] = tempTop[1];
-      this.B[2] = tempTop[0];
+      this.B[8] = tempTop[0];
     }
   }
 
