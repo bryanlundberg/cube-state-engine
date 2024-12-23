@@ -102,10 +102,10 @@ export class CubeEngine {
       this.STATES.UPPER[2][1] = tempUpper[3];
       this.STATES.UPPER[2][2] = tempUpper[6];
 
-      this.STATES.FRONT[0] = [...tempRight];
-      this.STATES.LEFT[0] = [...tempFront];
-      this.STATES.BACK[0] = [...tempLeft];
-      this.STATES.RIGHT[0] = [...tempBack];
+      this.STATES.FRONT[0] = [...tempLeft];
+      this.STATES.LEFT[0] = [...tempBack];
+      this.STATES.BACK[0] = [...tempRight];
+      this.STATES.RIGHT[0] = [...tempFront];
     }
   }
 
@@ -349,6 +349,49 @@ export class CubeEngine {
   }
 
   /**
+   * Rotates the (x) axis clockwise or counterclockwise.
+   */
+  rotateX(clockwise = true) {
+    if (clockwise) {
+      // Rotate the RIGHT and LEFT layers
+      const tempRight = [
+        ...this.STATES.RIGHT[0],
+        ...this.STATES.RIGHT[1],
+        ...this.STATES.RIGHT[2],
+      ];
+
+      const tempLeft = [
+        ...this.STATES.LEFT[0],
+        ...this.STATES.LEFT[1],
+        ...this.STATES.LEFT[2],
+      ];
+
+      this.STATES.RIGHT = [
+        [tempRight[6], tempRight[3], tempRight[0]],
+        [tempRight[7], tempRight[4], tempRight[1]],
+        [tempRight[8], tempRight[5], tempRight[2]],
+      ];
+
+      this.STATES.LEFT = [
+        [tempLeft[2], tempLeft[5], tempLeft[8]],
+        [tempLeft[1], tempLeft[4], tempLeft[7]],
+        [tempLeft[0], tempLeft[3], tempLeft[6]],
+      ];
+
+      // Rotation X axis
+      const tempUpper = [...this.STATES.UPPER];
+      const tempFront = [...this.STATES.FRONT];
+      const tempDown = [...this.STATES.DOWN];
+      const tempBack = [...this.STATES.BACK];
+
+      this.STATES.FRONT = [...tempDown];
+      this.STATES.UPPER = [...tempFront];
+      this.STATES.DOWN = [...tempBack];
+      this.STATES.BACK = [...tempUpper];
+    }
+  }
+
+  /**
    * Logs the current state of the cube.
    */
   state() {
@@ -417,69 +460,69 @@ export class CubeEngine {
 
 export const COLOR = {
   W: [
-    "⬜(1,1)",
-    "⬜(1,2)",
-    "⬜(1,3)",
-    "⬜(2,1)",
-    "⬜(2,2)",
-    "⬜(2,3)",
-    "⬜(3,1)",
-    "⬜(3,2)",
-    "⬜(3,3)",
+    "⚪(1,1)",
+    "⚪(1,2)",
+    "⚪(1,3)",
+    "⚪(2,1)",
+    "⚪(2,2)",
+    "⚪(2,3)",
+    "⚪(3,1)",
+    "⚪(3,2)",
+    "⚪(3,3)",
   ],
   G: [
-    "🟩(1,1)",
-    "🟩(1,2)",
-    "🟩(1,3)",
-    "🟩(2,1)",
-    "🟩(2,2)",
-    "🟩(2,3)",
-    "🟩(3,1)",
-    "🟩(3,2)",
-    "🟩(3,3)",
+    "🟢(1,1)",
+    "🟢(1,2)",
+    "🟢(1,3)",
+    "🟢(2,1)",
+    "🟢(2,2)",
+    "🟢(2,3)",
+    "🟢(3,1)",
+    "🟢(3,2)",
+    "🟢(3,3)",
   ],
   R: [
-    "🟥(1,1)",
-    "🟥(1,2)",
-    "🟥(1,3)",
-    "🟥(2,1)",
-    "🟥(2,2)",
-    "🟥(2,3)",
-    "🟥(3,1)",
-    "🟥(3,2)",
-    "🟥(3,3)",
+    "🔴(1,1)",
+    "🔴(1,2)",
+    "🔴(1,3)",
+    "🔴(2,1)",
+    "🔴(2,2)",
+    "🔴(2,3)",
+    "🔴(3,1)",
+    "🔴(3,2)",
+    "🔴(3,3)",
   ],
   B: [
-    "🟦(1,1)",
-    "🟦(1,2)",
-    "🟦(1,3)",
-    "🟦(2,1)",
-    "🟦(2,2)",
-    "🟦(2,3)",
-    "🟦(3,1)",
-    "🟦(3,2)",
-    "🟦(3,3)",
+    "🔵(1,1)",
+    "🔵(1,2)",
+    "🔵(1,3)",
+    "🔵(2,1)",
+    "🔵(2,2)",
+    "🔵(2,3)",
+    "🔵(3,1)",
+    "🔵(3,2)",
+    "🔵(3,3)",
   ],
   O: [
-    "🟧(1,1)",
-    "🟧(1,2)",
-    "🟧(1,3)",
-    "🟧(2,1)",
-    "🟧(2,2)",
-    "🟧(2,3)",
-    "🟧(3,1)",
-    "🟧(3,2)",
-    "🟧(3,3)",
+    "🟠(1,1)",
+    "🟠(1,2)",
+    "🟠(1,3)",
+    "🟠(2,1)",
+    "🟠(2,2)",
+    "🟠(2,3)",
+    "🟠(3,1)",
+    "🟠(3,2)",
+    "🟠(3,3)",
   ],
   Y: [
-    "🟨(1,1)",
-    "🟨(1,2)",
-    "🟨(1,3)",
-    "🟨(2,1)",
-    "🟨(2,2)",
-    "🟨(2,3)",
-    "🟨(3,1)",
-    "🟨(3,2)",
-    "🟨(3,3)",
+    "🟡(1,1)",
+    "🟡(1,2)",
+    "🟡(1,3)",
+    "🟡(2,1)",
+    "🟡(2,2)",
+    "🟡(2,3)",
+    "🟡(3,1)",
+    "🟡(3,2)",
+    "🟡(3,3)",
   ],
 };

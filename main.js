@@ -15,6 +15,8 @@ addEventListener("keyup", (e) => {
     k: () => v.rotateR(false), // K -> R'
     d: () => v.rotateL(true), // D -> L
     e: () => v.rotateL(false), // E -> L'
+    t: () => v.rotateX(), // T -> X
+    y: () => v.rotateX(), // Y -> X
   };
 
   const move = movesMap[e.key.toLowerCase()];
