@@ -15,11 +15,15 @@ addEventListener("keyup", (e) => {
     k: () => v.rotateR(false), // K -> R'
     d: () => v.rotateL(true), // D -> L
     e: () => v.rotateL(false), // E -> L'
+    t: () => v.rotateX(), // T -> X
+    y: () => v.rotateX(), // Y -> X
+    b: () => v.rotateX(false), // B -> X'
+    n: () => v.rotateX(false), // N -> X'
   };
 
   const move = movesMap[e.key.toLowerCase()];
   if (move) {
     move();
-    v.state();
+    console.log(v.state());
   }
 });
