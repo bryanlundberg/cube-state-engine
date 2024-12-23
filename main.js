@@ -20,6 +20,6 @@ addEventListener("keyup", (e) => {
   const move = movesMap[e.key.toLowerCase()];
   if (move) {
     move();
-    v.state();
+    console.log(v.state());
   }
 });
