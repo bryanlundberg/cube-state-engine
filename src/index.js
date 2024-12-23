@@ -52,26 +52,13 @@ export class CubeEngine {
       this.MOVES.push("U");
 
       // Rotate the top layer (UPPER) clockwise
-      const tempUpper = [
-        ...this.STATES.UPPER[0],
-        ...this.STATES.UPPER[1],
-        ...this.STATES.UPPER[2],
-      ];
+
+      this.STATES.UPPER = this.#switchMatrix(this.STATES.UPPER, true);
 
       const tempFront = [...this.STATES.FRONT[0]];
       const tempRight = [...this.STATES.RIGHT[0]];
       const tempLeft = [...this.STATES.LEFT[0]];
       const tempBack = [...this.STATES.BACK[0]];
-
-      this.STATES.UPPER[0][0] = tempUpper[6];
-      this.STATES.UPPER[0][1] = tempUpper[3];
-      this.STATES.UPPER[0][2] = tempUpper[0];
-      this.STATES.UPPER[1][0] = tempUpper[7];
-      this.STATES.UPPER[1][1] = tempUpper[4];
-      this.STATES.UPPER[1][2] = tempUpper[1];
-      this.STATES.UPPER[2][0] = tempUpper[8];
-      this.STATES.UPPER[2][1] = tempUpper[5];
-      this.STATES.UPPER[2][2] = tempUpper[2];
 
       this.STATES.FRONT[0] = [...tempRight];
       this.STATES.LEFT[0] = [...tempFront];
@@ -81,26 +68,12 @@ export class CubeEngine {
       this.MOVES.push("U'");
 
       // Rotate the top layer (UPPER) counterclockwise
-      const tempUpper = [
-        ...this.STATES.UPPER[0],
-        ...this.STATES.UPPER[1],
-        ...this.STATES.UPPER[2],
-      ];
+      this.STATES.UPPER = this.#switchMatrix(this.STATES.UPPER, false);
 
       const tempFront = [...this.STATES.FRONT[0]];
       const tempRight = [...this.STATES.RIGHT[0]];
       const tempLeft = [...this.STATES.LEFT[0]];
       const tempBack = [...this.STATES.BACK[0]];
-
-      this.STATES.UPPER[0][0] = tempUpper[2];
-      this.STATES.UPPER[0][1] = tempUpper[5];
-      this.STATES.UPPER[0][2] = tempUpper[8];
-      this.STATES.UPPER[1][0] = tempUpper[1];
-      this.STATES.UPPER[1][1] = tempUpper[4];
-      this.STATES.UPPER[1][2] = tempUpper[7];
-      this.STATES.UPPER[2][0] = tempUpper[0];
-      this.STATES.UPPER[2][1] = tempUpper[3];
-      this.STATES.UPPER[2][2] = tempUpper[6];
 
       this.STATES.FRONT[0] = [...tempLeft];
       this.STATES.LEFT[0] = [...tempBack];
@@ -407,6 +380,57 @@ export class CubeEngine {
       this.STATES.UPPER = [...tempBack];
       this.STATES.DOWN = [...tempFront];
       this.STATES.BACK = [...tempDown];
+    }
+  }
+
+  /**
+   * Rotates the (y) axis clockwise or counterclockwise.
+   */
+  rotateY(clockwise = true) {
+    const tempFront = [...this.STATES.FRONT];
+    const tempRight = [...this.STATES.RIGHT];
+    const tempBack = [...this.STATES.BACK];
+    const tempLeft = [...this.STATES.LEFT];
+
+    if (clockwise) {
+      this.STATES.UPPER = this.#switchMatrix(this.STATES.UPPER, true);
+      this.STATES.DOWN = this.#switchMatrix(this.STATES.DOWN, false);
+
+      // Rotation X axis
+      this.STATES.FRONT = [...tempRight];
+      this.STATES.RIGHT = [...tempBack];
+      this.STATES.LEFT = [...tempFront];
+      this.STATES.BACK = [...tempLeft];
+    } else {
+      this.STATES.UPPER = this.#switchMatrix(this.STATES.UPPER, false);
+      this.STATES.DOWN = this.#switchMatrix(this.STATES.DOWN, true);
+
+      // Rotation X axis
+      this.STATES.FRONT = [...tempLeft];
+      this.STATES.RIGHT = [...tempFront];
+      this.STATES.LEFT = [...tempBack];
+      this.STATES.BACK = [...tempRight];
+    }
+  }
+
+  /*
+   * Rotate the entire face in the direction set
+   */
+  #switchMatrix(matrix, clockwise = true) {
+    const tempMatrix = [...matrix[0], ...matrix[1], ...matrix[2]];
+
+    if (clockwise) {
+      return [
+        [tempMatrix[6], tempMatrix[3], tempMatrix[0]],
+        [tempMatrix[7], tempMatrix[4], tempMatrix[1]],
+        [tempMatrix[8], tempMatrix[5], tempMatrix[2]],
+      ];
+    } else {
+      return [
+        [tempMatrix[2], tempMatrix[5], tempMatrix[8]],
+        [tempMatrix[1], tempMatrix[4], tempMatrix[7]],
+        [tempMatrix[0], tempMatrix[3], tempMatrix[6]],
+      ];
     }
   }
 
