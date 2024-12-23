@@ -352,20 +352,25 @@ export class CubeEngine {
    * Rotates the (x) axis clockwise or counterclockwise.
    */
   rotateX(clockwise = true) {
+    const tempRight = [
+      ...this.STATES.RIGHT[0],
+      ...this.STATES.RIGHT[1],
+      ...this.STATES.RIGHT[2],
+    ];
+
+    const tempLeft = [
+      ...this.STATES.LEFT[0],
+      ...this.STATES.LEFT[1],
+      ...this.STATES.LEFT[2],
+    ];
+
+    const tempUpper = [...this.STATES.UPPER];
+    const tempFront = [...this.STATES.FRONT];
+    const tempDown = [...this.STATES.DOWN];
+    const tempBack = [...this.STATES.BACK];
+
     if (clockwise) {
       // Rotate the RIGHT and LEFT layers
-      const tempRight = [
-        ...this.STATES.RIGHT[0],
-        ...this.STATES.RIGHT[1],
-        ...this.STATES.RIGHT[2],
-      ];
-
-      const tempLeft = [
-        ...this.STATES.LEFT[0],
-        ...this.STATES.LEFT[1],
-        ...this.STATES.LEFT[2],
-      ];
-
       this.STATES.RIGHT = [
         [tempRight[6], tempRight[3], tempRight[0]],
         [tempRight[7], tempRight[4], tempRight[1]],
@@ -379,15 +384,29 @@ export class CubeEngine {
       ];
 
       // Rotation X axis
-      const tempUpper = [...this.STATES.UPPER];
-      const tempFront = [...this.STATES.FRONT];
-      const tempDown = [...this.STATES.DOWN];
-      const tempBack = [...this.STATES.BACK];
-
       this.STATES.FRONT = [...tempDown];
       this.STATES.UPPER = [...tempFront];
       this.STATES.DOWN = [...tempBack];
       this.STATES.BACK = [...tempUpper];
+    } else {
+      // Rotate the RIGHT and LEFT layers
+      this.STATES.RIGHT = [
+        [tempRight[2], tempRight[5], tempRight[8]],
+        [tempRight[1], tempRight[4], tempRight[7]],
+        [tempRight[0], tempRight[3], tempRight[6]],
+      ];
+
+      this.STATES.LEFT = [
+        [tempLeft[6], tempLeft[3], tempLeft[0]],
+        [tempLeft[7], tempLeft[4], tempLeft[1]],
+        [tempLeft[8], tempLeft[5], tempLeft[2]],
+      ];
+
+      // Rotation X axis
+      this.STATES.FRONT = [...tempUpper];
+      this.STATES.UPPER = [...tempBack];
+      this.STATES.DOWN = [...tempFront];
+      this.STATES.BACK = [...tempDown];
     }
   }
 
