@@ -1,9 +1,6 @@
 export class CubeEngine {
   CATEGORY = "3x3";
 
-  // History of movements
-  MOVES = [];
-
   // States object for the rotation
   STATES = {
     UPPER: [
@@ -43,6 +40,10 @@ export class CubeEngine {
       [COLOR.Y[6], COLOR.Y[7], COLOR.Y[8]],
     ],
   };
+
+  constructor() {
+    console.log("Initialized");
+  }
 
   /**
    * Rotates the top (U) layer clockwise or counterclockwise.
@@ -204,6 +205,10 @@ export class CubeEngine {
    * Logs the current state of the cube.
    */
   state() {
+    // console.clear();
+    console.log({
+      ...this.STATES,
+    });
     return {
       ...this.STATES,
     };
