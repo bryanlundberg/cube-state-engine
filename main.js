@@ -1,10 +1,12 @@
 import { CubeEngine } from "./src/index.js";
 
 const v = new CubeEngine();
-v.state();
+let state = v.state();
+render();
 const player = document.querySelector("twisty-player");
 
 const moves = [];
+
 /**
  * Key listener for cube movements.
  */
@@ -74,10 +76,37 @@ addEventListener("keyup", (e) => {
         break;
     }
 
+    state = v.state();
+
     document.querySelector("#total").textContent = moves.length;
     document.querySelector("#moves").textContent = moves.join(" ");
     document.querySelector("#is-solve").textContent = `${false}`;
+
     player.alg = moves.join(" ");
+    render();
     console.log(v.state());
   }
 });
+
+function render() {
+  Object.keys(state).map((layer) => {
+    document.querySelector(`#${layer}`).innerHTML = `
+  <div>
+<span>${state[`${layer}`][0][0]}</span>
+<span>${state[`${layer}`][0][1]}</span>
+<span>${state[`${layer}`][0][2]}</span>
+</div>
+<div>
+<span>${state[`${layer}`][1][0]}</span>
+<span>${state[`${layer}`][1][1]}</span>
+<span>${state[`${layer}`][1][2]}</span>
+</div>
+<div>
+<span>${state[`${layer}`][2][0]}</span>
+<span>${state[`${layer}`][2][1]}</span>
+<span>${state[`${layer}`][2][2]}</span>
+</div>
+
+`;
+  });
+}
