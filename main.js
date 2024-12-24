@@ -2,6 +2,9 @@ import { CubeEngine } from "./src/index.js";
 
 const v = new CubeEngine();
 v.state();
+const player = document.querySelector("twisty-player");
+
+const moves = [];
 /**
  * Key listener for cube movements.
  */
@@ -15,17 +18,66 @@ addEventListener("keyup", (e) => {
     k: () => v.rotateR(false), // K -> R'
     d: () => v.rotateL(true), // D -> L
     e: () => v.rotateL(false), // E -> L'
-    t: () => v.rotateX(), // T -> X
-    y: () => v.rotateX(), // Y -> X
+    t: () => v.rotateX(true), // T -> X
+    y: () => v.rotateX(true), // Y -> X
     b: () => v.rotateX(false), // B -> X'
     n: () => v.rotateX(false), // N -> X'
-    ñ: () => v.rotateY(), // Ñ / ; -> Y
-    a: () => v.rotateY(), // A -> Y'
+    ñ: () => v.rotateY(true), // Ñ / ; -> Y
+    a: () => v.rotateY(false), // A -> Y'
   };
 
   const move = movesMap[e.key.toLowerCase()];
   if (move) {
-    move();
+    console.log(move);
+    switch (`${move}`) {
+      case "() => v.rotateU(false)":
+        moves.push("U'");
+        break;
+      case "() => v.rotateU(true)":
+        moves.push("U");
+        break;
+      case "() => v.rotateF(false)":
+        moves.push("F'");
+        break;
+      case "() => v.rotateF(true)":
+        moves.push("F");
+        break;
+      case "() => v.rotateR(true)":
+        moves.push("R");
+        break;
+      case "() => v.rotateR(false)":
+        moves.push("R'");
+        break;
+      case "() => v.rotateL(true)":
+        moves.push("L");
+        break;
+      case "() => v.rotateL(false)":
+        moves.push("L'");
+        break;
+      case "() => v.rotateX(true)":
+        moves.push("x");
+        break;
+      case "() => v.rotateX(true)":
+        moves.push("x");
+        break;
+      case "() => v.rotateX(false)":
+        moves.push("x'");
+        break;
+      case "() => v.rotateX(false)":
+        moves.push("x'");
+        break;
+      case "() => v.rotateY(true)":
+        moves.push("y");
+        break;
+      case "() => v.rotateY(false)":
+        moves.push("y'");
+        break;
+    }
+
+    document.querySelector("#total").textContent = moves.length;
+    document.querySelector("#moves").textContent = moves.join(" ");
+    document.querySelector("#is-solve").textContent = `${false}`;
+    player.alg = moves.join(" ");
     console.log(v.state());
   }
 });

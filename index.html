@@ -3,9 +3,51 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- <link href="styles.css" rel="styleSheet" /> -->
+    <link href="./output.css" rel="stylesheet" />
+    <script
+      src="https://cdn.cubing.net/v0/js/cubing/twisty"
+      type="module"
+    ></script>
     <title>Cube Engine Sample</title>
   </head>
-  <body>
+  <body class="font-serif max-w-xl mx-auto p-10">
+    <h1 class="text-2xl text-center mt-5 mb-5">CUBE STATE ENGINE</h1>
+    <p class="mb-10">
+      It's a core state manager that should be able to integrate with custom 3D
+      cube models, making it easy to track and update the cube's state after
+      every move, providing context information, such as when it's solved.
+    </p>
+
+    <section
+      class="flex flex-col sm:flex-row justify-center items-center gap-10"
+    >
+      <div class="flex-col">
+        <h2 class="font-bold mb-3">3D</h2>
+        <twisty-player
+          style="width: 200px; height: 200px"
+          controlPanel="none"
+          back-view="top-right"
+        ></twisty-player>
+      </div>
+
+      <div class="flex-col">
+        <h2 class="font-bold mb-3">Memory</h2>
+        <div class="w-[200px] h-[200px] bg-black"></div>
+      </div>
+    </section>
+
+    <section class="text-start mt-5 w-full">
+      <div class="font-black">
+        isSolve?: <span class="font-normal" id="is-solve">False</span>
+      </div>
+      <div class="font-black">
+        Moves: <span class="font-normal" id="total">0</span>
+      </div>
+      <div>
+        <span class="font-black">Historial: </span><span id="moves"></span>
+      </div>
+    </section>
     <script src="main.js" type="module"></script>
   </body>
 </html>
