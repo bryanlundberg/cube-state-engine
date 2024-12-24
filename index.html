@@ -11,8 +11,8 @@
     ></script>
     <title>Cube Engine Sample</title>
   </head>
-  <body class="font-serif max-w-xl mx-auto p-10">
-    <h1 class="text-2xl text-center mt-5 mb-5">CUBE STATE ENGINE</h1>
+  <body class="max-w-xl p-10 mx-auto font-serif">
+    <h1 class="mt-5 mb-5 text-2xl text-center">CUBE STATE ENGINE</h1>
     <p class="mb-10">
       It's a core state manager that should be able to integrate with custom 3D
       cube models, making it easy to track and update the cube's state after
@@ -20,10 +20,10 @@
     </p>
 
     <section
-      class="flex flex-col sm:flex-row justify-center items-center gap-10"
+      class="flex flex-col items-center justify-center gap-10 sm:flex-row"
     >
       <div class="flex-col">
-        <h2 class="font-bold mb-3">3D</h2>
+        <h2 class="mb-3 font-bold">3D</h2>
         <twisty-player
           style="width: 200px; height: 200px"
           controlPanel="none"
@@ -32,7 +32,7 @@
       </div>
 
       <div class="flex-col">
-        <h2 class="font-bold mb-3">Memory</h2>
+        <h2 class="mb-3 font-bold">Memory</h2>
         <div
           class="w-[200px] h-[200px] flex justify-center items-center relative text-xs"
         >
@@ -51,9 +51,9 @@
       </div>
     </section>
 
-    <section class="text-start mt-5 w-full">
+    <section class="w-full mt-5 text-start">
       <div class="font-black">
-        isSolve?: <span class="font-normal" id="is-solve">False</span>
+        isSolved?: <span class="font-normal" id="is-solve">true</span>
       </div>
       <div class="font-black">
         Moves: <span class="font-normal" id="total">0</span>

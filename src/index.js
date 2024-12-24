@@ -213,6 +213,26 @@ export class CubeEngine {
       ...this.STATES,
     };
   }
+
+  isSolved() {
+    const temp = {
+      ...this.STATES,
+    };
+
+    const layersSolved = Object.keys(temp).map((layer) => {
+      const mixedMatrix = [
+        ...temp[layer][0],
+        ...temp[layer][1],
+        ...temp[layer][2],
+      ];
+
+      const centerColor = mixedMatrix[4];
+
+      return mixedMatrix.every((currentColor) => currentColor === centerColor);
+    });
+
+    return layersSolved.every((isLayerSolved) => isLayerSolved);
+  }
 }
 
 export const COLOR = {

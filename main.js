@@ -37,7 +37,9 @@ document.addEventListener("keyup", (e) => {
     // sync UI
     document.querySelector("#total").textContent = moves.length;
     document.querySelector("#moves").textContent = moves.join(" ");
-    document.querySelector("#is-solve").textContent = `${false}`;
+    document.querySelector(
+      "#is-solve"
+    ).textContent = `${window.CubeEngine.isSolved()}`;
     player.alg = moves.join(" ");
     render();
   }
