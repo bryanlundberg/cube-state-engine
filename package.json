@@ -6,7 +6,12 @@
   "scripts": {
     "test": "jest --watch"
   },
-  "keywords": [],
+  "keywords": [
+    "rubiks-cube",
+    "puzzle",
+    "virtualization",
+    "cube-tracking"
+  ],
   "author": "Bryan Lundberg",
   "license": "MIT",
   "devDependencies": {
