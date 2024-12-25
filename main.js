@@ -6,23 +6,25 @@ render();
 const player = document.querySelector("twisty-player");
 const moves = [];
 
+const CE = window.CubeEngine;
+
 const movesMap = {
-  f: { move: () => window.CubeEngine.rotateU(false), notation: "U'" },
-  j: { move: () => window.CubeEngine.rotateU(true), notation: "U" },
-  g: { move: () => window.CubeEngine.rotateF(false), notation: "F'" },
-  h: { move: () => window.CubeEngine.rotateF(true), notation: "F" },
-  i: { move: () => window.CubeEngine.rotateR(true), notation: "R" },
-  k: { move: () => window.CubeEngine.rotateR(false), notation: "R'" },
-  d: { move: () => window.CubeEngine.rotateL(true), notation: "L" },
-  e: { move: () => window.CubeEngine.rotateL(false), notation: "L'" },
-  t: { move: () => window.CubeEngine.rotateX(true), notation: "x" },
-  y: { move: () => window.CubeEngine.rotateX(true), notation: "x" },
-  b: { move: () => window.CubeEngine.rotateX(false), notation: "x'" },
-  n: { move: () => window.CubeEngine.rotateX(false), notation: "x'" },
-  ñ: { move: () => window.CubeEngine.rotateY(true), notation: "y" },
-  a: { move: () => window.CubeEngine.rotateY(false), notation: "y'" },
-  s: { move: () => window.CubeEngine.rotateD(true), notation: "D" },
-  l: { move: () => window.CubeEngine.rotateD(false), notation: "D'" },
+  f: { move: () => CE.rotateU(false), notation: "U'" },
+  j: { move: () => CE.rotateU(true), notation: "U" },
+  g: { move: () => CE.rotateF(false), notation: "F'" },
+  h: { move: () => CE.rotateF(true), notation: "F" },
+  i: { move: () => CE.rotateR(true), notation: "R" },
+  k: { move: () => CE.rotateR(false), notation: "R'" },
+  d: { move: () => CE.rotateL(true), notation: "L" },
+  e: { move: () => CE.rotateL(false), notation: "L'" },
+  t: { move: () => CE.rotateX(true), notation: "x" },
+  y: { move: () => CE.rotateX(true), notation: "x" },
+  b: { move: () => CE.rotateX(false), notation: "x'" },
+  n: { move: () => CE.rotateX(false), notation: "x'" },
+  ñ: { move: () => CE.rotateY(true), notation: "y" },
+  a: { move: () => CE.rotateY(false), notation: "y'" },
+  s: { move: () => CE.rotateD(true), notation: "D" },
+  l: { move: () => CE.rotateD(false), notation: "D'" },
 };
 
 /**

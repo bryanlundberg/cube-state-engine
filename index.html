@@ -12,12 +12,18 @@
     <title>Cube Engine Sample</title>
   </head>
   <body class="max-w-xl p-10 mx-auto font-serif">
-    <h1 class="mb-5 text-2xl text-center font-bold">CUBE STATE ENGINE</h1>
+    <h1 class="text-2xl text-center font-bold">CUBE STATE ENGINE</h1>
+    <h2 class="mb-5 text-center">Bryan Lundberg</h2>
     <p class="mb-10">
       It's a core state manager that should be able to integrate with custom 3D
       cube models, making it easy to track and update the cube's state after
       every move, providing context information, such as when it's solved.
     </p>
+
+    <h3 class="font-bold mb-5">Installation</h3>
+    <pre class="mb-5 text-xs">
+npm install cube-state-engine
+    </pre>
 
     <h3 class="font-bold mb-5">Docs</h3>
 
@@ -52,24 +58,26 @@ class CubeEngine {
       the library in action.
     </p>
 
-    <pre class="mt-5 text-xs text-wrap">
+    <pre class="mt-5 text-[0.6rem] sm:text-xs text-wrap">
+const CE = window.CubeEngine;
+
 const movesMap = {
-  f: { move: () => window.CubeEngine.rotateU(false), notation: "U'" },
-  j: { move: () => window.CubeEngine.rotateU(true), notation: "U" },
-  g: { move: () => window.CubeEngine.rotateF(false), notation: "F'" },
-  h: { move: () => window.CubeEngine.rotateF(true), notation: "F" },
-  i: { move: () => window.CubeEngine.rotateR(true), notation: "R" },
-  k: { move: () => window.CubeEngine.rotateR(false), notation: "R'" },
-  d: { move: () => window.CubeEngine.rotateL(true), notation: "L" },
-  e: { move: () => window.CubeEngine.rotateL(false), notation: "L'" },
-  t: { move: () => window.CubeEngine.rotateX(true), notation: "x" },
-  y: { move: () => window.CubeEngine.rotateX(true), notation: "x" },
-  b: { move: () => window.CubeEngine.rotateX(false), notation: "x'" },
-  n: { move: () => window.CubeEngine.rotateX(false), notation: "x'" },
-  ñ: { move: () => window.CubeEngine.rotateY(true), notation: "y" },
-  a: { move: () => window.CubeEngine.rotateY(false), notation: "y'" },
-  s: { move: () => window.CubeEngine.rotateD(true), notation: "D" },
-  l: { move: () => window.CubeEngine.rotateD(false), notation: "D'" },
+  f: { move: () => CE.rotateU(false), notation: "U'" },
+  j: { move: () => CE.rotateU(true), notation: "U" },
+  g: { move: () => CE.rotateF(false), notation: "F'" },
+  h: { move: () => CE.rotateF(true), notation: "F" },
+  i: { move: () => CE.rotateR(true), notation: "R" },
+  k: { move: () => CE.rotateR(false), notation: "R'" },
+  d: { move: () => CE.rotateL(true), notation: "L" },
+  e: { move: () => CE.rotateL(false), notation: "L'" },
+  t: { move: () => CE.rotateX(true), notation: "x" },
+  y: { move: () => CE.rotateX(true), notation: "x" },
+  b: { move: () => CE.rotateX(false), notation: "x'" },
+  n: { move: () => CE.rotateX(false), notation: "x'" },
+  ñ: { move: () => CE.rotateY(true), notation: "y" },
+  a: { move: () => CE.rotateY(false), notation: "y'" },
+  s: { move: () => CE.rotateD(true), notation: "D" },
+  l: { move: () => CE.rotateD(false), notation: "D'" },
 };
 
 setInterval(() => {
