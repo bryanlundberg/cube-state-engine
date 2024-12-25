@@ -3,9 +3,65 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- <link href="styles.css" rel="styleSheet" /> -->
+    <link href="./output.css" rel="stylesheet" />
+    <script
+      src="https://cdn.cubing.net/v0/js/cubing/twisty"
+      type="module"
+    ></script>
     <title>Cube Engine Sample</title>
   </head>
-  <body>
+  <body class="max-w-xl p-10 mx-auto font-serif">
+    <h1 class="mt-5 mb-5 text-2xl text-center">CUBE STATE ENGINE</h1>
+    <p class="mb-10">
+      It's a core state manager that should be able to integrate with custom 3D
+      cube models, making it easy to track and update the cube's state after
+      every move, providing context information, such as when it's solved.
+    </p>
+
+    <section
+      class="flex flex-col items-center justify-center gap-10 sm:flex-row"
+    >
+      <div class="flex-col">
+        <h2 class="mb-3 font-bold">3D</h2>
+        <twisty-player
+          style="width: 200px; height: 200px"
+          controlPanel="none"
+          back-view="top-right"
+        ></twisty-player>
+      </div>
+
+      <div class="flex-col">
+        <h2 class="mb-3 font-bold">Memory</h2>
+        <div
+          class="w-[200px] h-[200px] flex justify-center items-center relative text-xs"
+        >
+          <div class="absolute top-16 left-1" id="LEFT"></div>
+
+          <div class="absolute top-16 left-12" id="FRONT"></div>
+
+          <div class="absolute top-16 left-24" id="RIGHT"></div>
+
+          <div class="absolute top-16 left-36" id="BACK"></div>
+
+          <div class="absolute top-0 left-12" id="UPPER"></div>
+
+          <div class="absolute top-32 left-12" id="DOWN"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="w-full mt-5 text-start">
+      <div class="font-black">
+        isSolved?: <span class="font-normal" id="is-solve">true</span>
+      </div>
+      <div class="font-black">
+        Moves: <span class="font-normal" id="total">0</span>
+      </div>
+      <div>
+        <span class="font-black">Historial: </span><span id="moves"></span>
+      </div>
+    </section>
     <script src="main.js" type="module"></script>
   </body>
 </html>
