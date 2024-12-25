@@ -27,25 +27,27 @@ npm install cube-state-engine
 
     <h3 class="font-bold mb-5">Docs</h3>
 
-    <pre class="mb-5 text-xs">
-class CubeEngine {
-  isSolved():boolean,
-  state(): {
-    UPPER: string[][];
-    LEFT: string[][];
-    FRONT: string[][];
-    RIGHT: string[][];
-    BACK: string[][];
-    DOWN: string[][];
+    <pre class="mb-5 text-xs bg-amber-50">
+  
+  class CubeEngine {
+    isSolved():boolean,
+    state(): {
+      UPPER: string[][];
+      LEFT: string[][];
+      FRONT: string[][];
+      RIGHT: string[][];
+      BACK: string[][];
+      DOWN: string[][];
+    }
+    rotateU(clockwise: boolean): void,
+    rotateF(clockwise: boolean): void,
+    rotateD(clockwise: boolean): void,
+    rotateX(clockwise: boolean): void,
+    rotateY(clockwise: boolean): void,
+    rotateL(clockwise: boolean): void,
+    rotateR(clockwise: boolean): void,
   }
-  rotateU(clockwise: boolean): void,
-  rotateF(clockwise: boolean): void,
-  rotateD(clockwise: boolean): void,
-  rotateX(clockwise: boolean): void,
-  rotateY(clockwise: boolean): void,
-  rotateL(clockwise: boolean): void,
-  rotateR(clockwise: boolean): void,
-}
+
 </pre
     >
 
@@ -58,37 +60,38 @@ class CubeEngine {
       the library in action.
     </p>
 
-    <pre class="mt-5 text-[0.6rem] sm:text-xs text-wrap">
-const CE = window.CubeEngine;
+    <pre class="mt-5 text-[0.6rem] sm:text-xs text-wrap bg-amber-50">
+ 
+  const CE = window.CubeEngine;
 
-const movesMap = {
-  f: { move: () => CE.rotateU(false), notation: "U'" },
-  j: { move: () => CE.rotateU(true), notation: "U" },
-  g: { move: () => CE.rotateF(false), notation: "F'" },
-  h: { move: () => CE.rotateF(true), notation: "F" },
-  i: { move: () => CE.rotateR(true), notation: "R" },
-  k: { move: () => CE.rotateR(false), notation: "R'" },
-  d: { move: () => CE.rotateL(true), notation: "L" },
-  e: { move: () => CE.rotateL(false), notation: "L'" },
-  t: { move: () => CE.rotateX(true), notation: "x" },
-  y: { move: () => CE.rotateX(true), notation: "x" },
-  b: { move: () => CE.rotateX(false), notation: "x'" },
-  n: { move: () => CE.rotateX(false), notation: "x'" },
-  ñ: { move: () => CE.rotateY(true), notation: "y" },
-  a: { move: () => CE.rotateY(false), notation: "y'" },
-  s: { move: () => CE.rotateD(true), notation: "D" },
-  l: { move: () => CE.rotateD(false), notation: "D'" },
-};
+  const movesMap = {
+    f: { move: () => CE.rotateU(false), notation: "U'" },
+    j: { move: () => CE.rotateU(true), notation: "U" },
+    g: { move: () => CE.rotateF(false), notation: "F'" },
+    h: { move: () => CE.rotateF(true), notation: "F" },
+    i: { move: () => CE.rotateR(true), notation: "R" },
+    k: { move: () => CE.rotateR(false), notation: "R'" },
+    d: { move: () => CE.rotateL(true), notation: "L" },
+    e: { move: () => CE.rotateL(false), notation: "L'" },
+    t: { move: () => CE.rotateX(true), notation: "x" },
+    y: { move: () => CE.rotateX(true), notation: "x" },
+    b: { move: () => CE.rotateX(false), notation: "x'" },
+    n: { move: () => CE.rotateX(false), notation: "x'" },
+    ñ: { move: () => CE.rotateY(true), notation: "y" },
+    a: { move: () => CE.rotateY(false), notation: "y'" },
+    s: { move: () => CE.rotateD(true), notation: "D" },
+    l: { move: () => CE.rotateD(false), notation: "D'" },
+  };
 
-setInterval(() => {
-  const keys = Object.keys(movesMap);
-  const randomKey = keys[Math.floor(Math.random() * keys.length)];
-  executeMove(randomKey);
-}, 1000);
+  setInterval(() => {
+    const keys = Object.keys(movesMap);
+    const randomKey = keys[Math.floor(Math.random() * keys.length)];
+    executeMove(randomKey);
+  }, 250);
       </pre
     >
     <section
-      class="flex flex-col items-center justify-center gap-10 sm:flex-row"
+      class="flex flex-col items-center justify-center gap-10 sm:flex-row mt-5"
     >
       <div class="flex-col">
         <h2 class="mb-3 font-bold">3D</h2>
@@ -102,7 +105,7 @@ setInterval(() => {
       <div class="flex-col">
         <h2 class="mb-3 font-bold">Memory</h2>
         <div
-          class="w-[200px] h-[200px] flex justify-center items-center relative text-xs bg-white"
+          class="w-[200px] h-[200px] flex justify-center items-center relative text-xs bg-amber-200"
         >
           <div class="absolute top-16 left-1" id="LEFT"></div>
 
@@ -119,11 +122,13 @@ setInterval(() => {
       </div>
     </section>
 
-    <section class="w-full mt-5 text-start border">
-      <div class="font-black border-b">
+    <section
+      class="w-full mt-5 text-start bg-amber-200 cursor-not-allowed select-none p-1"
+    >
+      <div class="font-black">
         isSolved?: <span class="font-normal" id="is-solve">true</span>
       </div>
-      <div class="font-black border-b">
+      <div class="font-black">
         Moves: <span class="font-normal" id="total">0</span>
       </div>
       <div>

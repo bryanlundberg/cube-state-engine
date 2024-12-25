@@ -55,7 +55,7 @@ setInterval(() => {
   const keys = Object.keys(movesMap);
   const randomKey = keys[Math.floor(Math.random() * keys.length)];
   executeMove(randomKey);
-}, 1000);
+}, 250);
 
 /**
  * Key listener for cube movements.
