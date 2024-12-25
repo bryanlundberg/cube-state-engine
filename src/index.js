@@ -119,6 +119,18 @@ export class CubeEngine {
     }
   }
 
+  rotateD(clockwise) {
+    if (clockwise) {
+      this.rotateX(true);
+      this.rotateF(true);
+      this.rotateX(false);
+    } else {
+      this.rotateX(true);
+      this.rotateF(false);
+      this.rotateX(false);
+    }
+  }
+
   /**
    * Rotates the (x) axis clockwise or counterclockwise.
    */

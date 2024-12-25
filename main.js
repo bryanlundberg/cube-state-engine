@@ -25,6 +25,8 @@ document.addEventListener("keyup", (e) => {
     n: { move: () => window.CubeEngine.rotateX(false), notation: "x'" },
     ñ: { move: () => window.CubeEngine.rotateY(true), notation: "y" },
     a: { move: () => window.CubeEngine.rotateY(false), notation: "y'" },
+    s: { move: () => window.CubeEngine.rotateD(true), notation: "D" },
+    l: { move: () => window.CubeEngine.rotateD(false), notation: "D'" },
   };
 
   const key = e.key.toLowerCase();
