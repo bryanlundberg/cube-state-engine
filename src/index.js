@@ -119,7 +119,7 @@ export class CubeEngine {
     }
   }
 
-  rotateD(clockwise) {
+  rotateD(clockwise = true) {
     if (clockwise) {
       this.rotateX(true);
       this.rotateF(true);
