@@ -1,6 +1,4 @@
 export class CubeEngine {
-  CATEGORY = "3x3";
-
   // States object for the rotation
   STATES = {
     UPPER: [
@@ -41,10 +39,6 @@ export class CubeEngine {
     ],
   };
 
-  constructor() {
-    console.log("Initialized");
-  }
-
   /**
    * Rotates the top (U) layer clockwise or counterclockwise.
    */
@@ -83,23 +77,45 @@ export class CubeEngine {
    */
   rotateF(clockwise = true) {
     if (clockwise) {
-      this.MOVES.push("F");
+      this.rotateX(true);
+      this.rotateU(true);
       this.rotateX(false);
-      this.rotateU();
-      this.rotateX();
     } else {
-      this.MOVES.push("F'");
-      // Rotate the front layer counterclockwise
+      this.rotateX(true);
+      this.rotateU(false);
+      this.rotateX(false);
     }
   }
 
   rotateR(clockwise = true) {
     if (clockwise) {
-      this.MOVES.push("R");
-      // Rotate the right layer clockwise
+      this.rotateY(true);
+      this.rotateX(true);
+      this.rotateU(true);
+      this.rotateX(false);
+      this.rotateY(false);
     } else {
-      this.MOVES.push("R'");
-      // Rotate the right layer counterclockwise
+      this.rotateY(true);
+      this.rotateX(true);
+      this.rotateU(false);
+      this.rotateX(false);
+      this.rotateY(false);
+    }
+  }
+
+  rotateL(clockwise = true) {
+    if (clockwise) {
+      this.rotateY(false);
+      this.rotateX(true);
+      this.rotateU(true);
+      this.rotateX(false);
+      this.rotateY(true);
+    } else {
+      this.rotateY(false);
+      this.rotateX(true);
+      this.rotateU(false);
+      this.rotateX(false);
+      this.rotateY(true);
     }
   }
 
@@ -107,12 +123,12 @@ export class CubeEngine {
    * Rotates the (x) axis clockwise or counterclockwise.
    */
   rotateX(clockwise = true) {
-    const tempFront = [...this.STATES.FRONT];
-    const tempDown = [...this.STATES.DOWN];
-    const tempUpper = [...this.STATES.UPPER];
-    const tempBack = [...this.STATES.BACK];
-    const tempLeft = [...this.STATES.LEFT];
-    const tempRight = [...this.STATES.RIGHT];
+    const tempFront = structuredClone(this.STATES.FRONT);
+    const tempDown = structuredClone(this.STATES.DOWN);
+    const tempUpper = structuredClone(this.STATES.UPPER);
+    const tempBack = structuredClone(this.STATES.BACK);
+    const tempLeft = structuredClone(this.STATES.LEFT);
+    const tempRight = structuredClone(this.STATES.RIGHT);
 
     if (clockwise) {
       // Rotate the RIGHT and LEFT layers
@@ -145,10 +161,10 @@ export class CubeEngine {
    * Rotates the (y) axis clockwise or counterclockwise.
    */
   rotateY(clockwise = true) {
-    const tempFront = [...this.STATES.FRONT];
-    const tempRight = [...this.STATES.RIGHT];
-    const tempBack = [...this.STATES.BACK];
-    const tempLeft = [...this.STATES.LEFT];
+    const tempFront = structuredClone(this.STATES.FRONT);
+    const tempRight = structuredClone(this.STATES.RIGHT);
+    const tempBack = structuredClone(this.STATES.BACK);
+    const tempLeft = structuredClone(this.STATES.LEFT);
 
     if (clockwise) {
       this.STATES.UPPER = this.#switchMatrix(this.STATES.UPPER, true);
@@ -171,11 +187,13 @@ export class CubeEngine {
     }
   }
 
-  /*
+  /**
    * Rotate the entire face in the direction set
    */
   #switchMatrix(matrix, clockwise = true) {
-    const tempMatrix = [...matrix[0], ...matrix[1], ...matrix[2]];
+    const clone = structuredClone(matrix);
+
+    const tempMatrix = [...clone[0], ...clone[1], ...clone[2]];
 
     if (clockwise) {
       return [
@@ -193,19 +211,16 @@ export class CubeEngine {
   }
 
   #specialFlip(matrix) {
-    const tempMatrix = [...matrix];
-    return [
-      [tempMatrix[2].reverse()],
-      [tempMatrix[1].reverse()],
-      [tempMatrix[0].reverse()],
-    ];
+    return structuredClone(matrix)
+      .reverse()
+      .map((row) => [...row].reverse());
   }
 
   /**
    * Logs the current state of the cube.
    */
   state() {
-    // console.clear();
+    console.clear();
     console.log({
       ...this.STATES,
     });
@@ -214,6 +229,9 @@ export class CubeEngine {
     };
   }
 
+  /**
+   * Indicates if the cube is solve or not in all layers.
+   */
   isSolved() {
     const temp = {
       ...this.STATES,
