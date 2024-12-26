@@ -1,10 +1,14 @@
 {
   "name": "cube-state-engine",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "An efficient representation in memory for tracking the Rubik's cube state on each movement.",
-  "main": "./src/index.js",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
   "scripts": {
-    "test": "jest --watch"
+    "test": "jest --watch",
+    "build": "tsup src/index.js --format cjs,esm --dts",
+    "lint": "tsc"
   },
   "keywords": [
     "rubiks-cube",
@@ -23,6 +27,8 @@
     "@babel/core": "7.26.0",
     "@babel/preset-env": "7.26.0",
     "babel-jest": "29.7.0",
-    "jest": "29.7.0"
+    "jest": "29.7.0",
+    "tsup": "8.3.5",
+    "typescript": "5.7.2"
   }
 }
