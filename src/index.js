@@ -40,11 +40,10 @@ export class CubeEngine {
   };
 
   /**
-   * Rotates the top (U) layer clockwise or counterclockwise.
+   * Rotates the (UPPER) layer clockwise or counterclockwise.
    */
   rotateU(clockwise = true) {
     if (clockwise) {
-      // Rotate the top layer (UPPER) clockwise
       this.STATES.UPPER = this.#switchMatrix(this.STATES.UPPER, true);
 
       const tempFront = [...this.STATES.FRONT[0]];
@@ -57,7 +56,6 @@ export class CubeEngine {
       this.STATES.BACK[0] = [...tempLeft];
       this.STATES.RIGHT[0] = [...tempBack];
     } else {
-      // Rotate the top layer (UPPER) counterclockwise
       this.STATES.UPPER = this.#switchMatrix(this.STATES.UPPER, false);
 
       const tempFront = [...this.STATES.FRONT[0]];
@@ -73,7 +71,7 @@ export class CubeEngine {
   }
 
   /**
-   * Rotates the front (F) layer clockwise or counterclockwise.
+   * Rotates the (FRONT) layer clockwise or counterclockwise.
    */
   rotateF(clockwise = true) {
     if (clockwise) {
@@ -87,6 +85,9 @@ export class CubeEngine {
     }
   }
 
+  /**
+   * Rotates the (RIGHT) layer clockwise or counterclockwise.
+   */
   rotateR(clockwise = true) {
     if (clockwise) {
       this.rotateY(true);
@@ -103,6 +104,9 @@ export class CubeEngine {
     }
   }
 
+  /**
+   * Rotates the (LEFT) layer clockwise or counterclockwise.
+   */
   rotateL(clockwise = true) {
     if (clockwise) {
       this.rotateY(false);
@@ -119,6 +123,9 @@ export class CubeEngine {
     }
   }
 
+  /**
+   * Rotates the (DOWN) layer clockwise or counterclockwise.
+   */
   rotateD(clockwise = true) {
     if (clockwise) {
       this.rotateX(true);
@@ -143,27 +150,24 @@ export class CubeEngine {
     const tempRight = structuredClone(this.STATES.RIGHT);
 
     if (clockwise) {
-      // Rotate the RIGHT and LEFT layers
+      // Balance the rotation
       this.STATES.LEFT = this.#switchMatrix(tempLeft, false);
       this.STATES.RIGHT = this.#switchMatrix(tempRight, true);
 
-      // Rotation X axis
+      // Rotate mid X axis
       this.STATES.FRONT = [...tempDown];
       this.STATES.UPPER = [...tempFront];
 
-      // Special permutation
+      // Special permutation (BACK view elements)
       this.STATES.BACK = this.#specialFlip(tempUpper);
       this.STATES.DOWN = this.#specialFlip(tempBack);
     } else {
-      // Rotate the RIGHT and LEFT layers
       this.STATES.LEFT = this.#switchMatrix(tempLeft, true);
       this.STATES.RIGHT = this.#switchMatrix(tempRight, false);
 
-      // Rotation X axis
       this.STATES.FRONT = [...tempUpper];
       this.STATES.DOWN = [...tempFront];
 
-      // Special permutation
       this.STATES.BACK = this.#specialFlip(tempDown);
       this.STATES.UPPER = this.#specialFlip(tempBack);
     }
@@ -182,7 +186,6 @@ export class CubeEngine {
       this.STATES.UPPER = this.#switchMatrix(this.STATES.UPPER, true);
       this.STATES.DOWN = this.#switchMatrix(this.STATES.DOWN, false);
 
-      // Rotation X axis
       this.STATES.FRONT = [...tempRight];
       this.STATES.RIGHT = [...tempBack];
       this.STATES.LEFT = [...tempFront];
@@ -191,7 +194,6 @@ export class CubeEngine {
       this.STATES.UPPER = this.#switchMatrix(this.STATES.UPPER, false);
       this.STATES.DOWN = this.#switchMatrix(this.STATES.DOWN, true);
 
-      // Rotation X axis
       this.STATES.FRONT = [...tempLeft];
       this.STATES.RIGHT = [...tempFront];
       this.STATES.LEFT = [...tempBack];
@@ -232,10 +234,6 @@ export class CubeEngine {
    * Logs the current state of the cube.
    */
   state() {
-    console.clear();
-    console.log({
-      ...this.STATES,
-    });
     return {
       ...this.STATES,
     };
