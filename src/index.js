@@ -1,4 +1,6 @@
 export class CubeEngine {
+  MOVES = [];
+
   // States object for the rotation
   STATES = {
     UPPER: [
@@ -44,6 +46,16 @@ export class CubeEngine {
    */
   rotateU(clockwise = true) {
     if (clockwise) {
+      this.#rotateU(true);
+      this.MOVES.push("U");
+    } else {
+      this.#rotateU(false);
+      this.MOVES.push("U'");
+    }
+  }
+
+  #rotateU(clockwise = true) {
+    if (clockwise) {
       this.STATES.UPPER = this.#switchMatrix(this.STATES.UPPER, true);
 
       const tempFront = [...this.STATES.FRONT[0]];
@@ -75,13 +87,23 @@ export class CubeEngine {
    */
   rotateF(clockwise = true) {
     if (clockwise) {
-      this.rotateX(true);
-      this.rotateU(true);
-      this.rotateX(false);
+      this.#rotateF(true);
+      this.MOVES.push("F");
     } else {
-      this.rotateX(true);
-      this.rotateU(false);
-      this.rotateX(false);
+      this.#rotateF(false);
+      this.MOVES.push("F'");
+    }
+  }
+
+  #rotateF(clockwise = true) {
+    if (clockwise) {
+      this.#rotateX(true);
+      this.#rotateU(true);
+      this.#rotateX(false);
+    } else {
+      this.#rotateX(true);
+      this.#rotateU(false);
+      this.#rotateX(false);
     }
   }
 
@@ -90,17 +112,27 @@ export class CubeEngine {
    */
   rotateR(clockwise = true) {
     if (clockwise) {
-      this.rotateY(true);
-      this.rotateX(true);
-      this.rotateU(true);
-      this.rotateX(false);
-      this.rotateY(false);
+      this.#rotateR(true);
+      this.MOVES.push("R");
     } else {
-      this.rotateY(true);
-      this.rotateX(true);
-      this.rotateU(false);
-      this.rotateX(false);
-      this.rotateY(false);
+      this.#rotateR(false);
+      this.MOVES.push("R'");
+    }
+  }
+
+  #rotateR(clockwise = true) {
+    if (clockwise) {
+      this.#rotateY(true);
+      this.#rotateX(true);
+      this.#rotateU(true);
+      this.#rotateX(false);
+      this.#rotateY(false);
+    } else {
+      this.#rotateY(true);
+      this.#rotateX(true);
+      this.#rotateU(false);
+      this.#rotateX(false);
+      this.#rotateY(false);
     }
   }
 
@@ -109,17 +141,27 @@ export class CubeEngine {
    */
   rotateL(clockwise = true) {
     if (clockwise) {
-      this.rotateY(false);
-      this.rotateX(true);
-      this.rotateU(true);
-      this.rotateX(false);
-      this.rotateY(true);
+      this.#rotateL(true);
+      this.MOVES.push("L");
     } else {
-      this.rotateY(false);
-      this.rotateX(true);
-      this.rotateU(false);
-      this.rotateX(false);
-      this.rotateY(true);
+      this.#rotateL(false);
+      this.MOVES.push("L'");
+    }
+  }
+
+  #rotateL(clockwise = true) {
+    if (clockwise) {
+      this.#rotateY(false);
+      this.#rotateX(true);
+      this.#rotateU(true);
+      this.#rotateX(false);
+      this.#rotateY(true);
+    } else {
+      this.#rotateY(false);
+      this.#rotateX(true);
+      this.#rotateU(false);
+      this.#rotateX(false);
+      this.#rotateY(true);
     }
   }
 
@@ -128,13 +170,23 @@ export class CubeEngine {
    */
   rotateD(clockwise = true) {
     if (clockwise) {
-      this.rotateX(true);
-      this.rotateF(true);
-      this.rotateX(false);
+      this.#rotateD(true);
+      this.MOVES.push("D");
     } else {
-      this.rotateX(true);
-      this.rotateF(false);
-      this.rotateX(false);
+      this.#rotateD(false);
+      this.MOVES.push("D'");
+    }
+  }
+
+  #rotateD(clockwise = true) {
+    if (clockwise) {
+      this.#rotateX(true);
+      this.#rotateF(true);
+      this.#rotateX(false);
+    } else {
+      this.#rotateX(true);
+      this.#rotateF(false);
+      this.#rotateX(false);
     }
   }
 
@@ -142,6 +194,16 @@ export class CubeEngine {
    * Rotates the (x) axis clockwise or counterclockwise.
    */
   rotateX(clockwise = true) {
+    if (clockwise) {
+      this.#rotateX(true);
+      this.MOVES.push("x");
+    } else {
+      this.#rotateX(false);
+      this.MOVES.push("x'");
+    }
+  }
+
+  #rotateX(clockwise = true) {
     const tempFront = structuredClone(this.STATES.FRONT);
     const tempDown = structuredClone(this.STATES.DOWN);
     const tempUpper = structuredClone(this.STATES.UPPER);
@@ -177,6 +239,16 @@ export class CubeEngine {
    * Rotates the (y) axis clockwise or counterclockwise.
    */
   rotateY(clockwise = true) {
+    if (clockwise) {
+      this.#rotateY(true);
+      this.MOVES.push("y");
+    } else {
+      this.#rotateY(false);
+      this.MOVES.push("y'");
+    }
+  }
+
+  #rotateY(clockwise = true) {
     const tempFront = structuredClone(this.STATES.FRONT);
     const tempRight = structuredClone(this.STATES.RIGHT);
     const tempBack = structuredClone(this.STATES.BACK);
@@ -260,6 +332,16 @@ export class CubeEngine {
     });
 
     return layersSolved.every((isLayerSolved) => isLayerSolved);
+  }
+
+  /**
+   * Returns the history of all movements made.
+   *
+   * @param {boolean} asString - If true, returns the history as a string; otherwise, returns it as an array.
+   * @returns {string|array} The history of movements as an array or string.
+   */
+  getMoves(asString = true) {
+    return asString ? this.MOVES : this.MOVES.join(" ");
   }
 }
 
