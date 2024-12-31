@@ -341,7 +341,7 @@ export class CubeEngine {
    * @returns {string|array} The history of movements as an array or string.
    */
   getMoves(asString = true) {
-    return asString ? this.MOVES : this.MOVES.join(" ");
+    return asString ? this.MOVES.join(" ") : this.MOVES;
   }
 }
 

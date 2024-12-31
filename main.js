@@ -4,27 +4,26 @@ window.CubeEngine = new CubeEngine();
 render();
 
 const player = document.querySelector("twisty-player");
-const moves = [];
 
 const CE = window.CubeEngine;
 
 const movesMap = {
-  f: { move: () => CE.rotateU(false), notation: "U'" },
-  j: { move: () => CE.rotateU(true), notation: "U" },
-  g: { move: () => CE.rotateF(false), notation: "F'" },
-  h: { move: () => CE.rotateF(true), notation: "F" },
-  i: { move: () => CE.rotateR(true), notation: "R" },
-  k: { move: () => CE.rotateR(false), notation: "R'" },
-  d: { move: () => CE.rotateL(true), notation: "L" },
-  e: { move: () => CE.rotateL(false), notation: "L'" },
-  t: { move: () => CE.rotateX(true), notation: "x" },
-  y: { move: () => CE.rotateX(true), notation: "x" },
-  b: { move: () => CE.rotateX(false), notation: "x'" },
-  n: { move: () => CE.rotateX(false), notation: "x'" },
-  ñ: { move: () => CE.rotateY(true), notation: "y" },
-  a: { move: () => CE.rotateY(false), notation: "y'" },
-  s: { move: () => CE.rotateD(true), notation: "D" },
-  l: { move: () => CE.rotateD(false), notation: "D'" },
+  f: { move: () => CE.rotateU(false) },
+  j: { move: () => CE.rotateU(true) },
+  g: { move: () => CE.rotateF(false) },
+  h: { move: () => CE.rotateF(true) },
+  i: { move: () => CE.rotateR(true) },
+  k: { move: () => CE.rotateR(false) },
+  d: { move: () => CE.rotateL(true) },
+  e: { move: () => CE.rotateL(false) },
+  t: { move: () => CE.rotateX(true) },
+  y: { move: () => CE.rotateX(true) },
+  b: { move: () => CE.rotateX(false) },
+  n: { move: () => CE.rotateX(false) },
+  ñ: { move: () => CE.rotateY(true) },
+  a: { move: () => CE.rotateY(false) },
+  s: { move: () => CE.rotateD(true) },
+  l: { move: () => CE.rotateD(false) },
 };
 
 /**
@@ -37,7 +36,7 @@ function executeMove(key) {
   if (moveObj) {
     // Execute the movement
     moveObj.move();
-    moves.push(moveObj.notation);
+    const moves = CE.getMoves(false);
 
     // Update the user interface
     document.querySelector("#total").textContent = moves.length;
