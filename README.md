@@ -10,6 +10,7 @@ A core state manager designed to integrate with custom 3D cube models. This engi
 | ----------------------------- | -------------------------------------------------------------------------- | ----------- |
 | `isSolved()`                  | Checks if the cube is solved.                                              | `boolean`   |
 | `state()`                     | Returns the current state of the cube as an object representing each face. | `object`    |
+| `getMoves(asString: boolean)` | Returns the history of all movements made.                                 | `string`    |
 | `rotateU(clockwise: boolean)` | Rotates the **Upper** face clockwise or counterclockwise.                  | `void`      |
 | `rotateF(clockwise: boolean)` | Rotates the **Front** face clockwise or counterclockwise.                  | `void`      |
 | `rotateD(clockwise: boolean)` | Rotates the **Down** face clockwise or counterclockwise.                   | `void`      |
