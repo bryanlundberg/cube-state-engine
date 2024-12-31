@@ -4,6 +4,12 @@ A core state manager designed to integrate with custom 3D cube models. This engi
 
 ---
 
+## Installation
+
+    npm install cube-state-engine
+
+---
+
 ## Methods
 
 | Method                        | Description                                                                | Return Type |
