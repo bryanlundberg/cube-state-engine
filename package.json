@@ -1,6 +1,6 @@
 {
   "name": "cube-state-engine",
-  "version": "1.0.5",
+  "version": "1.1.0",
   "description": "An efficient representation in memory for tracking the Rubik's cube state on each movement.",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
