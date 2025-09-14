@@ -1,7 +1,7 @@
 export class CubeEngine {
   MOVES = [];
 
-  constructor(initialScramble) {
+  constructor(initialScramble = "") {
     // If an initial scramble string is provided, apply it without recording moves
     if (typeof initialScramble === "string" && initialScramble.trim().length > 0) {
       this.#applyMovesFromString(initialScramble, false);

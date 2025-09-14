@@ -29,10 +29,11 @@
     <h3 class="font-bold mb-5">Docs</h3>
 
     <pre class="mb-5 text-xs bg-amber-50">
-  
+
   class CubeEngine {
-    isSolved():boolean,
-    getMoves(asString: boolean): string,
+    constructor(initialScramble?: string): CubeEngine,
+    isSolved(): boolean,
+    getMoves(asString?: boolean): string | string[],
     state(): {
       UPPER: string[][];
       LEFT: string[][];
@@ -40,14 +41,22 @@
       RIGHT: string[][];
       BACK: string[][];
       DOWN: string[][];
-    }
-    rotateU(clockwise: boolean): void,
-    rotateF(clockwise: boolean): void,
-    rotateD(clockwise: boolean): void,
-    rotateX(clockwise: boolean): void,
-    rotateY(clockwise: boolean): void,
-    rotateL(clockwise: boolean): void,
-    rotateR(clockwise: boolean): void,
+    },
+    reset(): void,
+    applyMoves(sequence: string, options?: { record?: boolean }): void,
+    rotateU(clockwise?: boolean): void,
+    rotateD(clockwise?: boolean): void,
+    rotateL(clockwise?: boolean): void,
+    rotateR(clockwise?: boolean): void,
+    rotateF(clockwise?: boolean): void,
+    rotateX(clockwise?: boolean): void,
+    rotateY(clockwise?: boolean): void,
+    rotateZ(clockwise?: boolean): void,
+    rotateDw(clockwise?: boolean): void,
+    rotateUw(clockwise?: boolean): void,
+    rotateRw(clockwise?: boolean): void,
+    rotateLw(clockwise?: boolean): void,
+    rotateM(clockwise?: boolean): void,
   }
 
 </pre
@@ -63,7 +72,7 @@
     </p>
 
     <pre class="mt-5 text-[0.6rem] sm:text-xs text-wrap bg-amber-50">
- 
+
   const CE = window.CubeEngine;
 
   const movesMap = {

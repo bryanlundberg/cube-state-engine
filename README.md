@@ -18,6 +18,7 @@ A core state manager designed to integrate with custom 3D cube models. This engi
 | `isSolved()`                                     | Checks if the cube is solved.                                                                            | `boolean`           |
 | `state()`                                        | Returns the current state of the cube as an object representing each face.                               | `object`            |
 | `getMoves(asString?: boolean)`                   | Returns the history of all movements; as string if `true` (default), or as array if `false`.             | `string / string[]` |
+| `reset()`                                        | Resets the cube to the solved state and clears the move history.                                         | `void`              |
 | `applyMoves(sequence: string, options?: {record?: boolean})` | Applies a sequence of moves (supports U, D, L, R, F, x, y, z, M, Dw, Uw, Rw, Lw with ', 2). | `void`              |
 | `rotateU(clockwise?: boolean)`                   | Rotates the **Upper** layer clockwise or counterclockwise.                                               | `void`              |
 | `rotateD(clockwise?: boolean)`                   | Rotates the **Down** layer clockwise or counterclockwise.                                                | `void`              |
@@ -73,6 +74,11 @@ console.log(cube.state());
 // Get history as string or array
 console.log(cube.getMoves(true));  // "U Dw Dw' M2 ..."
 console.log(cube.getMoves(false)); // ["U", "Dw", "Dw'", "M", "M"]
+
+// Reset the cube to solved state and clear history
+cube.reset();
+console.log(cube.isSolved());      // true
+console.log(cube.getMoves(false)); // []
 
 // Rotate the cube along the Y-axis
 cube.rotateY(false);
