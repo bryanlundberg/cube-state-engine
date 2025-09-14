@@ -269,6 +269,30 @@ export class CubeEngine {
   }
 
   /**
+   * Rotates the wide (LEFT two layers) clockwise or counterclockwise.
+   */
+  rotateLw(clockwise = true) {
+    if (clockwise) {
+      this.#rotateLw(true);
+      this.MOVES.push("Lw");
+    } else {
+      this.#rotateLw(false);
+      this.MOVES.push("Lw'");
+    }
+  }
+
+  #rotateLw(clockwise = true) {
+    if (clockwise) {
+      // Lw equals x' R
+      this.#rotateX(false);
+      this.#rotateR(true);
+    } else {
+      this.#rotateX(true);
+      this.#rotateR(false);
+    }
+  }
+
+  /**
    * Rotates the (x) axis clockwise or counterclockwise.
    */
   rotateX(clockwise = true) {
@@ -424,8 +448,8 @@ export class CubeEngine {
 
   /**
    * Applies a sequence of moves provided as a string.
-   * Supports: U, D, L, R, F, x, y and wide moves: Dw, Uw, Rw with optional ' for counterclockwise and 2 for double turns.
-   * @param {string} sequence - e.g. "R U' F R2 D Dw Uw Rw Rw'"
+   * Supports: U, D, L, R, F, x, y and wide moves: Dw, Uw, Rw, Lw with optional ' for counterclockwise and 2 for double turns.
+   * @param {string} sequence - e.g. "R U' F R2 D Dw Uw Rw Rw' Lw Lw2"
    * @param {object} options - { record: boolean } whether to record moves in history (default true)
    */
   applyMoves(sequence, options = { record: false }) {
@@ -497,10 +521,20 @@ export class CubeEngine {
           }
           break;
         case 'L':
-          exec(
-            () => (record ? this.rotateL(true) : this.#rotateL(true)),
-            () => (record ? this.rotateL(false) : this.#rotateL(false))
-          );
+          {
+            const isWide = /w/i.test(rest);
+            if (isWide) {
+              exec(
+                () => (record ? this.rotateLw(true) : this.#rotateLw(true)),
+                () => (record ? this.rotateLw(false) : this.#rotateLw(false))
+              );
+            } else {
+              exec(
+                () => (record ? this.rotateL(true) : this.#rotateL(true)),
+                () => (record ? this.rotateL(false) : this.#rotateL(false))
+              );
+            }
+          }
           break;
         case 'R':
           {
