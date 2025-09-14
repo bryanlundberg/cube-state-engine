@@ -22,6 +22,7 @@ A core state manager designed to integrate with custom 3D cube models. This engi
 | `rotateD(clockwise: boolean)` | Rotates the **Down** face clockwise or counterclockwise.                   | `void`      |
 | `rotateX(clockwise: boolean)` | Rotates the cube along the **X-axis** clockwise or counterclockwise.       | `void`      |
 | `rotateY(clockwise: boolean)` | Rotates the cube along the **Y-axis** clockwise or counterclockwise.       | `void`      |
+| `rotateZ(clockwise: boolean)` | Rotates the cube along the **Z-axis** clockwise or counterclockwise.       | `void`      |
 | `rotateL(clockwise: boolean)` | Rotates the **Left** face clockwise or counterclockwise.                   | `void`      |
 | `rotateR(clockwise: boolean)` | Rotates the **Right** face clockwise or counterclockwise.                  | `void`      |
 

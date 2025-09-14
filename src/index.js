@@ -361,6 +361,50 @@ export class CubeEngine {
   }
 
   /**
+   * Rotates the (z) axis clockwise or counterclockwise.
+   */
+  rotateZ(clockwise = true) {
+    if (clockwise) {
+      this.#rotateZ(true);
+      this.MOVES.push("z");
+    } else {
+      this.#rotateZ(false);
+      this.MOVES.push("z'");
+    }
+  }
+
+  #rotateZ(clockwise = true) {
+    const tempUpper = structuredClone(this.STATES.UPPER);
+    const tempRight = structuredClone(this.STATES.RIGHT);
+    const tempDown = structuredClone(this.STATES.DOWN);
+    const tempLeft = structuredClone(this.STATES.LEFT);
+    const tempFront = structuredClone(this.STATES.FRONT);
+    const tempBack = structuredClone(this.STATES.BACK);
+
+    if (clockwise) {
+      // Rotate faces on the rotation axis
+      this.STATES.FRONT = this.#switchMatrix(tempFront, true);
+      this.STATES.BACK = this.#switchMatrix(tempBack, false);
+
+      // Cycle U -> R -> D -> L -> U with proper orientation
+      this.STATES.RIGHT = this.#switchMatrix(tempUpper, true);
+      this.STATES.DOWN = this.#switchMatrix(tempRight, true);
+      this.STATES.LEFT = this.#switchMatrix(tempDown, true);
+      this.STATES.UPPER = this.#switchMatrix(tempLeft, true);
+    } else {
+      // Counterclockwise
+      this.STATES.FRONT = this.#switchMatrix(tempFront, false);
+      this.STATES.BACK = this.#switchMatrix(tempBack, true);
+
+      // Cycle U -> L -> D -> R -> U (inverse of clockwise), rotate CCW
+      this.STATES.RIGHT = this.#switchMatrix(tempDown, false);
+      this.STATES.DOWN = this.#switchMatrix(tempLeft, false);
+      this.STATES.LEFT = this.#switchMatrix(tempUpper, false);
+      this.STATES.UPPER = this.#switchMatrix(tempRight, false);
+    }
+  }
+
+  /**
    * Rotates the (y) axis clockwise or counterclockwise.
    */
   rotateY(clockwise = true) {
@@ -471,7 +515,7 @@ export class CubeEngine {
 
   /**
    * Applies a sequence of moves provided as a string.
-   * Supports: U, D, L, R, F, x, y; slice moves: M; and wide moves: Dw, Uw, Rw, Lw with optional ' for counterclockwise and 2 for double turns.
+   * Supports: U, D, L, R, F, x, y, z; slice moves: M; and wide moves: Dw, Uw, Rw, Lw with optional ' for counterclockwise and 2 for double turns.
    * @param {string} sequence - e.g. "R U' F R2 D Dw Uw Rw Rw' Lw Lw2 M M' M2"
    * @param {object} options - { record: boolean } whether to record moves in history (default true)
    */
@@ -591,6 +635,12 @@ export class CubeEngine {
           exec(
             () => (record ? this.rotateY(true) : this.#rotateY(true)),
             () => (record ? this.rotateY(false) : this.#rotateY(false))
+          );
+          break;
+        case 'z':
+          exec(
+            () => (record ? this.rotateZ(true) : this.#rotateZ(true)),
+            () => (record ? this.rotateZ(false) : this.#rotateZ(false))
           );
           break;
         case 'M':
