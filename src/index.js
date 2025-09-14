@@ -117,6 +117,33 @@ export class CubeEngine {
   }
 
   /**
+   * Rotates the (BACK) layer clockwise or counterclockwise.
+   */
+  rotateB(clockwise = true) {
+    if (clockwise) {
+      this.#rotateB(true);
+      this.MOVES.push("B");
+    } else {
+      this.#rotateB(false);
+      this.MOVES.push("B'");
+    }
+  }
+
+  #rotateB(clockwise = true) {
+    // Implement B as y2 F y2
+    // Clockwise/counterclockwise direction is preserved through y2 conjugation
+    this.#rotateY(true);
+    this.#rotateY(true);
+    if (clockwise) {
+      this.#rotateF(true);
+    } else {
+      this.#rotateF(false);
+    }
+    this.#rotateY(false);
+    this.#rotateY(false);
+  }
+
+  /**
    * Rotates the (RIGHT) layer clockwise or counterclockwise.
    */
   rotateR(clockwise = true) {
@@ -662,6 +689,12 @@ export class CubeEngine {
           exec(
             () => (record ? this.rotateF(true) : this.#rotateF(true)),
             () => (record ? this.rotateF(false) : this.#rotateF(false))
+          );
+          break;
+        case 'B':
+          exec(
+            () => (record ? this.rotateB(true) : this.#rotateB(true)),
+            () => (record ? this.rotateB(false) : this.#rotateB(false))
           );
           break;
         case 'x':

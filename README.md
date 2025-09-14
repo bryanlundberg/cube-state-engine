@@ -19,12 +19,13 @@ A core state manager designed to integrate with custom 3D cube models. This engi
 | `state()`                                        | Returns the current state of the cube as an object representing each face.                               | `object`            |
 | `getMoves(asString?: boolean)`                   | Returns the history of all movements; as string if `true` (default), or as array if `false`.             | `string / string[]` |
 | `reset()`                                        | Resets the cube to the solved state and clears the move history.                                         | `void`              |
-| `applyMoves(sequence: string, options?: {record?: boolean})` | Applies a sequence of moves (supports U, D, L, R, F, x, y, z, M, Dw, Uw, Rw, Lw with ', 2). | `void`              |
+| `applyMoves(sequence: string, options?: {record?: boolean})` | Applies a sequence of moves (supports U, D, L, R, F, B, x, y, z, M, Dw, Uw, Rw, Lw with ', 2). | `void`              |
 | `rotateU(clockwise?: boolean)`                   | Rotates the **Upper** layer clockwise or counterclockwise.                                               | `void`              |
 | `rotateD(clockwise?: boolean)`                   | Rotates the **Down** layer clockwise or counterclockwise.                                                | `void`              |
 | `rotateL(clockwise?: boolean)`                   | Rotates the **Left** layer clockwise or counterclockwise.                                                | `void`              |
 | `rotateR(clockwise?: boolean)`                   | Rotates the **Right** layer clockwise or counterclockwise.                                               | `void`              |
 | `rotateF(clockwise?: boolean)`                   | Rotates the **Front** layer clockwise or counterclockwise.                                               | `void`              |
+| `rotateB(clockwise?: boolean)`                   | Rotates the **Back** layer clockwise or counterclockwise.                                                | `void`              |
 | `rotateX(clockwise?: boolean)`                   | Rotates the cube along the **X-axis** clockwise or counterclockwise.                                     | `void`              |
 | `rotateY(clockwise?: boolean)`                   | Rotates the cube along the **Y-axis** clockwise or counterclockwise.                                     | `void`              |
 | `rotateZ(clockwise?: boolean)`                   | Rotates the cube along the **Z-axis** clockwise or counterclockwise.                                     | `void`              |

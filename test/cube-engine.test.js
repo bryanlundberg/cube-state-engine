@@ -864,3 +864,25 @@ test("reset should leave cube solved and clear history", () => {
   expect(cube.isSolved()).toBe(true);
   expect(cube.getMoves(false)).toHaveLength(0);
 });
+
+test("B equals y2 F y2", () => {
+  const a = new CubeEngine();
+  const b = new CubeEngine();
+  a.applyMoves("B", { record: false });
+  b.applyMoves("y2 F y2", { record: false });
+  expect(JSON.stringify(a.state())).toBe(JSON.stringify(b.state()));
+});
+
+test("B' equals y2 F' y2", () => {
+  const a = new CubeEngine();
+  const b = new CubeEngine();
+  a.applyMoves("B'", { record: false });
+  b.applyMoves("y2 F' y2", { record: false });
+  expect(JSON.stringify(a.state())).toBe(JSON.stringify(b.state()));
+});
+
+test("applyMoves supports B and records when requested", () => {
+  const cube = new CubeEngine();
+  cube.applyMoves("B B' B2", { record: true });
+  expect(cube.getMoves(true)).toBe("B B' B B");
+});
