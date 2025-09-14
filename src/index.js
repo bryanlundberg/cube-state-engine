@@ -200,6 +200,29 @@ export class CubeEngine {
   }
 
   /**
+   * Rotates the wide (DOWN two layers) clockwise or counterclockwise.
+   */
+  rotateDw(clockwise = true) {
+    if (clockwise) {
+      this.#rotateDw(true);
+      this.MOVES.push("Dw");
+    } else {
+      this.#rotateDw(false);
+      this.MOVES.push("Dw'");
+    }
+  }
+
+  #rotateDw(clockwise = true) {
+    if (clockwise) {
+      this.#rotateY(false);
+      this.#rotateU(true);
+    } else {
+      this.#rotateY(true);
+      this.#rotateU(false);
+    }
+  }
+
+  /**
    * Rotates the (x) axis clockwise or counterclockwise.
    */
   rotateX(clockwise = true) {
@@ -355,8 +378,8 @@ export class CubeEngine {
 
   /**
    * Applies a sequence of moves provided as a string.
-   * Supports: U, D, L, R, F, x, y with optional ' for counterclockwise and 2 for double turns.
-   * @param {string} sequence - e.g. "R U' F R2 D"
+   * Supports: U, D, L, R, F, x, y and Dw (wide D) with optional ' for counterclockwise and 2 for double turns.
+   * @param {string} sequence - e.g. "R U' F R2 D Dw Dw'"
    * @param {object} options - { record: boolean } whether to record moves in history (default true)
    */
   applyMoves(sequence, options = { record: false }) {
@@ -402,10 +425,20 @@ export class CubeEngine {
           );
           break;
         case 'D':
-          exec(
-            () => (record ? this.rotateD(true) : this.#rotateD(true)),
-            () => (record ? this.rotateD(false) : this.#rotateD(false))
-          );
+          {
+            const isWide = /w/i.test(rest);
+            if (isWide) {
+              exec(
+                () => (record ? this.rotateDw(true) : this.#rotateDw(true)),
+                () => (record ? this.rotateDw(false) : this.#rotateDw(false))
+              );
+            } else {
+              exec(
+                () => (record ? this.rotateD(true) : this.#rotateD(true)),
+                () => (record ? this.rotateD(false) : this.#rotateD(false))
+              );
+            }
+          }
           break;
         case 'L':
           exec(

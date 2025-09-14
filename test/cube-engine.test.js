@@ -668,3 +668,41 @@ test("applyMoves with record: false does not record history", () => {
   cube.applyMoves("R U' F R2 D");
   expect(cube.getMoves(false)).toHaveLength(0);
 });
+
+test("Dw equals y' U", () => {
+  const a = new CubeEngine();
+  const b = new CubeEngine();
+  a.applyMoves("Dw", { record: false });
+  b.applyMoves("y' U", { record: false });
+  expect(JSON.stringify(a.state())).toBe(JSON.stringify(b.state()));
+});
+
+test("Dw' equals y U'", () => {
+  const a = new CubeEngine();
+  const b = new CubeEngine();
+  a.applyMoves("Dw'", { record: false });
+  b.applyMoves("y U'", { record: false });
+  expect(JSON.stringify(a.state())).toBe(JSON.stringify(b.state()));
+});
+
+test("Dw2 equals Dw Dw", () => {
+  const a = new CubeEngine();
+  const b = new CubeEngine();
+  a.applyMoves("Dw2", { record: false });
+  b.applyMoves("Dw Dw", { record: false });
+  expect(JSON.stringify(a.state())).toBe(JSON.stringify(b.state()));
+});
+
+test("applyMoves records Dw tokens when record: true", () => {
+  const cube = new CubeEngine();
+  cube.applyMoves("Dw Dw' Dw2", { record: true });
+  // Dw2 should be recorded as two Dw quarter-turns
+  expect(cube.getMoves(true)).toBe("Dw Dw' Dw Dw");
+  expect(cube.getMoves(false)).toEqual(["Dw", "Dw'", "Dw", "Dw"]);
+});
+
+test("constructor scramble supports Dw and does not record history", () => {
+  const cube = new CubeEngine("Dw Dw'");
+  expect(cube.isSolved()).toBe(true);
+  expect(cube.getMoves(false)).toHaveLength(0);
+});
