@@ -647,3 +647,24 @@ test("U' U L R D' F L F' x' L D y' U' L D y' R D y' L x L D y' L F", () => {
   };
   expect(JSON.stringify(state)).toBe(JSON.stringify(result));
 });
+
+
+test("initialize with scramble by string: R U' F R2 D", () => {
+  const scrambled = new CubeEngine("R U' F R2 D");
+
+  const result = {
+    UPPER: [[COLOR.G[0], COLOR.G[1], COLOR.G[2]], [COLOR.W[3], COLOR.W[4], COLOR.B[5]], [COLOR.O[6], COLOR.O[7], COLOR.B[8]]],
+    LEFT: [[COLOR.W[0], COLOR.B[1], COLOR.Y[2]], [COLOR.O[3], COLOR.O[4], COLOR.Y[5]], [COLOR.O[6], COLOR.B[7], COLOR.B[8]]],
+    FRONT: [[COLOR.G[0], COLOR.G[1], COLOR.W[2]], [COLOR.G[3], COLOR.G[4], COLOR.W[5]], [COLOR.O[6], COLOR.O[7], COLOR.B[8]]],
+    RIGHT: [[COLOR.R[0], COLOR.R[1], COLOR.W[2]], [COLOR.R[3], COLOR.R[4], COLOR.W[5]], [COLOR.Y[6], COLOR.Y[7], COLOR.R[8]]],
+    BACK: [[COLOR.O[0], COLOR.R[1], COLOR.R[2]], [COLOR.O[3], COLOR.B[4], COLOR.B[5]], [COLOR.Y[6], COLOR.G[7], COLOR.W[8]]],
+    DOWN: [[COLOR.Y[0], COLOR.Y[1], COLOR.R[2]], [COLOR.Y[3], COLOR.Y[4], COLOR.R[5]], [COLOR.B[6], COLOR.W[7], COLOR.G[8]]]
+  }
+  expect(JSON.stringify(scrambled.state())).toBe(JSON.stringify(result));
+});
+
+test("applyMoves with record: false does not record history", () => {
+  const cube = new CubeEngine();
+  cube.applyMoves("R U' F R2 D");
+  expect(cube.getMoves(false)).toHaveLength(0);
+});
