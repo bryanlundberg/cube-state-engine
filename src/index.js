@@ -1,6 +1,15 @@
 export class CubeEngine {
   MOVES = [];
 
+  constructor(initialScramble) {
+    // If an initial scramble string is provided, apply it without recording moves
+    if (typeof initialScramble === "string" && initialScramble.trim().length > 0) {
+      this.#applyMovesFromString(initialScramble, false);
+      // Ensure history is empty for initial position
+      this.MOVES = [];
+    }
+  }
+
   // States object for the rotation
   STATES = {
     UPPER: [
@@ -191,6 +200,122 @@ export class CubeEngine {
   }
 
   /**
+   * Rotates the wide (DOWN two layers) clockwise or counterclockwise.
+   */
+  rotateDw(clockwise = true) {
+    if (clockwise) {
+      this.#rotateDw(true);
+      this.MOVES.push("Dw");
+    } else {
+      this.#rotateDw(false);
+      this.MOVES.push("Dw'");
+    }
+  }
+
+  #rotateDw(clockwise = true) {
+    if (clockwise) {
+      this.#rotateY(false);
+      this.#rotateU(true);
+    } else {
+      this.#rotateY(true);
+      this.#rotateU(false);
+    }
+  }
+
+  /**
+   * Rotates the wide (UPPER two layers) clockwise or counterclockwise.
+   */
+  rotateUw(clockwise = true) {
+    if (clockwise) {
+      this.#rotateUw(true);
+      this.MOVES.push("Uw");
+    } else {
+      this.#rotateUw(false);
+      this.MOVES.push("Uw'");
+    }
+  }
+
+  #rotateUw(clockwise = true) {
+    if (clockwise) {
+      this.#rotateY(true);
+      this.#rotateD(true);
+    } else {
+      this.#rotateY(false);
+      this.#rotateD(false);
+    }
+  }
+
+  /**
+   * Rotates the wide (RIGHT two layers) clockwise or counterclockwise.
+   */
+  rotateRw(clockwise = true) {
+    if (clockwise) {
+      this.#rotateRw(true);
+      this.MOVES.push("Rw");
+    } else {
+      this.#rotateRw(false);
+      this.MOVES.push("Rw'");
+    }
+  }
+
+  #rotateRw(clockwise = true) {
+    if (clockwise) {
+      this.#rotateX(true);
+      this.#rotateL(true);
+    } else {
+      this.#rotateX(false);
+      this.#rotateL(false);
+    }
+  }
+
+  /**
+   * Rotates the wide (LEFT two layers) clockwise or counterclockwise.
+   */
+  rotateLw(clockwise = true) {
+    if (clockwise) {
+      this.#rotateLw(true);
+      this.MOVES.push("Lw");
+    } else {
+      this.#rotateLw(false);
+      this.MOVES.push("Lw'");
+    }
+  }
+
+  #rotateLw(clockwise = true) {
+    if (clockwise) {
+      // Lw equals x' R
+      this.#rotateX(false);
+      this.#rotateR(true);
+    } else {
+      this.#rotateX(true);
+      this.#rotateR(false);
+    }
+  }
+
+  /**
+   * Rotates the middle slice (M) parallel to L/R. Clockwise corresponds to Lw followed by L'.
+   */
+  rotateM(clockwise = true) {
+    if (clockwise) {
+      this.#rotateM(true);
+      this.MOVES.push("M");
+    } else {
+      this.#rotateM(false);
+      this.MOVES.push("M'");
+    }
+  }
+
+  #rotateM(clockwise = true) {
+    if (clockwise) {
+      this.#rotateLw(true);
+      this.#rotateL(false);
+    } else {
+      this.#rotateLw(false);
+      this.#rotateL(true);
+    }
+  }
+
+  /**
    * Rotates the (x) axis clockwise or counterclockwise.
    */
   rotateX(clockwise = true) {
@@ -232,6 +357,50 @@ export class CubeEngine {
 
       this.STATES.BACK = this.#specialFlip(tempDown);
       this.STATES.UPPER = this.#specialFlip(tempBack);
+    }
+  }
+
+  /**
+   * Rotates the (z) axis clockwise or counterclockwise.
+   */
+  rotateZ(clockwise = true) {
+    if (clockwise) {
+      this.#rotateZ(true);
+      this.MOVES.push("z");
+    } else {
+      this.#rotateZ(false);
+      this.MOVES.push("z'");
+    }
+  }
+
+  #rotateZ(clockwise = true) {
+    const tempUpper = structuredClone(this.STATES.UPPER);
+    const tempRight = structuredClone(this.STATES.RIGHT);
+    const tempDown = structuredClone(this.STATES.DOWN);
+    const tempLeft = structuredClone(this.STATES.LEFT);
+    const tempFront = structuredClone(this.STATES.FRONT);
+    const tempBack = structuredClone(this.STATES.BACK);
+
+    if (clockwise) {
+      // Rotate faces on the rotation axis
+      this.STATES.FRONT = this.#switchMatrix(tempFront, true);
+      this.STATES.BACK = this.#switchMatrix(tempBack, false);
+
+      // Cycle U -> R -> D -> L -> U with proper orientation
+      this.STATES.RIGHT = this.#switchMatrix(tempUpper, true);
+      this.STATES.DOWN = this.#switchMatrix(tempRight, true);
+      this.STATES.LEFT = this.#switchMatrix(tempDown, true);
+      this.STATES.UPPER = this.#switchMatrix(tempLeft, true);
+    } else {
+      // Counterclockwise
+      this.STATES.FRONT = this.#switchMatrix(tempFront, false);
+      this.STATES.BACK = this.#switchMatrix(tempBack, true);
+
+      // Cycle U -> L -> D -> R -> U (inverse of clockwise), rotate CCW
+      this.STATES.RIGHT = this.#switchMatrix(tempDown, false);
+      this.STATES.DOWN = this.#switchMatrix(tempLeft, false);
+      this.STATES.LEFT = this.#switchMatrix(tempUpper, false);
+      this.STATES.UPPER = this.#switchMatrix(tempRight, false);
     }
   }
 
@@ -342,6 +511,149 @@ export class CubeEngine {
    */
   getMoves(asString = true) {
     return asString ? this.MOVES.join(" ") : this.MOVES;
+  }
+
+  /**
+   * Applies a sequence of moves provided as a string.
+   * Supports: U, D, L, R, F, x, y, z; slice moves: M; and wide moves: Dw, Uw, Rw, Lw with optional ' for counterclockwise and 2 for double turns.
+   * @param {string} sequence - e.g. "R U' F R2 D Dw Uw Rw Rw' Lw Lw2 M M' M2"
+   * @param {object} options - { record: boolean } whether to record moves in history (default true)
+   */
+  applyMoves(sequence, options = { record: false }) {
+    const record = options?.record !== false;
+    this.#applyMovesFromString(sequence, record);
+  }
+
+  // Internal: parses and applies moves. If record=false, uses private methods to avoid logging.
+  #applyMovesFromString(sequence, record = true) {
+    if (typeof sequence !== "string") return;
+    const tokens = sequence
+      .split(/\s+/)
+      .map((t) => t.trim())
+      .filter((t) => t.length > 0);
+
+    for (const token of tokens) {
+      const base = token[0];
+      const rest = token.slice(1);
+      const isDouble = rest.includes("2");
+      const isPrime = rest.includes("'");
+
+      const times = isDouble ? 2 : 1;
+
+      const exec = (fnClockwise, fnCounter) => {
+        if (isDouble) {
+          // Double turns ignore prime; do two clockwise quarter-turns
+          fnClockwise();
+          fnClockwise();
+        } else {
+          if (isPrime) {
+            fnCounter();
+          } else {
+            fnClockwise();
+          }
+        }
+      };
+
+      switch (base) {
+        case 'U':
+          {
+            const isWide = /w/i.test(rest);
+            if (isWide) {
+              exec(
+                () => (record ? this.rotateUw(true) : this.#rotateUw(true)),
+                () => (record ? this.rotateUw(false) : this.#rotateUw(false))
+              );
+            } else {
+              exec(
+                () => (record ? this.rotateU(true) : this.#rotateU(true)),
+                () => (record ? this.rotateU(false) : this.#rotateU(false))
+              );
+            }
+          }
+          break;
+        case 'D':
+          {
+            const isWide = /w/i.test(rest);
+            if (isWide) {
+              exec(
+                () => (record ? this.rotateDw(true) : this.#rotateDw(true)),
+                () => (record ? this.rotateDw(false) : this.#rotateDw(false))
+              );
+            } else {
+              exec(
+                () => (record ? this.rotateD(true) : this.#rotateD(true)),
+                () => (record ? this.rotateD(false) : this.#rotateD(false))
+              );
+            }
+          }
+          break;
+        case 'L':
+          {
+            const isWide = /w/i.test(rest);
+            if (isWide) {
+              exec(
+                () => (record ? this.rotateLw(true) : this.#rotateLw(true)),
+                () => (record ? this.rotateLw(false) : this.#rotateLw(false))
+              );
+            } else {
+              exec(
+                () => (record ? this.rotateL(true) : this.#rotateL(true)),
+                () => (record ? this.rotateL(false) : this.#rotateL(false))
+              );
+            }
+          }
+          break;
+        case 'R':
+          {
+            const isWide = /w/i.test(rest);
+            if (isWide) {
+              exec(
+                () => (record ? this.rotateRw(true) : this.#rotateRw(true)),
+                () => (record ? this.rotateRw(false) : this.#rotateRw(false))
+              );
+            } else {
+              exec(
+                () => (record ? this.rotateR(true) : this.#rotateR(true)),
+                () => (record ? this.rotateR(false) : this.#rotateR(false))
+              );
+            }
+          }
+          break;
+        case 'F':
+          exec(
+            () => (record ? this.rotateF(true) : this.#rotateF(true)),
+            () => (record ? this.rotateF(false) : this.#rotateF(false))
+          );
+          break;
+        case 'x':
+          exec(
+            () => (record ? this.rotateX(true) : this.#rotateX(true)),
+            () => (record ? this.rotateX(false) : this.#rotateX(false))
+          );
+          break;
+        case 'y':
+          exec(
+            () => (record ? this.rotateY(true) : this.#rotateY(true)),
+            () => (record ? this.rotateY(false) : this.#rotateY(false))
+          );
+          break;
+        case 'z':
+          exec(
+            () => (record ? this.rotateZ(true) : this.#rotateZ(true)),
+            () => (record ? this.rotateZ(false) : this.#rotateZ(false))
+          );
+          break;
+        case 'M':
+          exec(
+            () => (record ? this.rotateM(true) : this.#rotateM(true)),
+            () => (record ? this.rotateM(false) : this.#rotateM(false))
+          );
+          break;
+        default:
+          // Unsupported token (including B, Z, etc.). Ignore silently for now.
+          break;
+      }
+    }
   }
 }
 
