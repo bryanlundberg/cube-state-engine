@@ -246,6 +246,29 @@ export class CubeEngine {
   }
 
   /**
+   * Rotates the wide (RIGHT two layers) clockwise or counterclockwise.
+   */
+  rotateRw(clockwise = true) {
+    if (clockwise) {
+      this.#rotateRw(true);
+      this.MOVES.push("Rw");
+    } else {
+      this.#rotateRw(false);
+      this.MOVES.push("Rw'");
+    }
+  }
+
+  #rotateRw(clockwise = true) {
+    if (clockwise) {
+      this.#rotateX(true);
+      this.#rotateL(true);
+    } else {
+      this.#rotateX(false);
+      this.#rotateL(false);
+    }
+  }
+
+  /**
    * Rotates the (x) axis clockwise or counterclockwise.
    */
   rotateX(clockwise = true) {
@@ -401,8 +424,8 @@ export class CubeEngine {
 
   /**
    * Applies a sequence of moves provided as a string.
-   * Supports: U, D, L, R, F, x, y and Dw (wide D) with optional ' for counterclockwise and 2 for double turns.
-   * @param {string} sequence - e.g. "R U' F R2 D Dw Dw'"
+   * Supports: U, D, L, R, F, x, y and wide moves: Dw, Uw, Rw with optional ' for counterclockwise and 2 for double turns.
+   * @param {string} sequence - e.g. "R U' F R2 D Dw Uw Rw Rw'"
    * @param {object} options - { record: boolean } whether to record moves in history (default true)
    */
   applyMoves(sequence, options = { record: false }) {
@@ -480,10 +503,20 @@ export class CubeEngine {
           );
           break;
         case 'R':
-          exec(
-            () => (record ? this.rotateR(true) : this.#rotateR(true)),
-            () => (record ? this.rotateR(false) : this.#rotateR(false))
-          );
+          {
+            const isWide = /w/i.test(rest);
+            if (isWide) {
+              exec(
+                () => (record ? this.rotateRw(true) : this.#rotateRw(true)),
+                () => (record ? this.rotateRw(false) : this.#rotateRw(false))
+              );
+            } else {
+              exec(
+                () => (record ? this.rotateR(true) : this.#rotateR(true)),
+                () => (record ? this.rotateR(false) : this.#rotateR(false))
+              );
+            }
+          }
           break;
         case 'F':
           exec(

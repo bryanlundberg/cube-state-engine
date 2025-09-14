@@ -706,3 +706,33 @@ test("constructor scramble supports Dw and does not record history", () => {
   expect(cube.isSolved()).toBe(true);
   expect(cube.getMoves(false)).toHaveLength(0);
 });
+
+test("ROTATE Rw then Rw' returns to solved", () => {
+  const cube = new CubeEngine();
+  cube.rotateRw(true);
+  cube.rotateRw(false);
+  expect(cube.isSolved()).toBe(true);
+});
+
+test("applyMoves supports Rw and Rw' and records when requested", () => {
+  const cube = new CubeEngine();
+  cube.applyMoves("Rw Rw'", { record: true });
+  expect(cube.isSolved()).toBe(true);
+  expect(cube.getMoves(true)).toBe("Rw Rw'");
+});
+
+test("Rw equals x L", () => {
+  const a = new CubeEngine();
+  const b = new CubeEngine();
+  a.applyMoves("Rw", { record: false });
+  b.applyMoves("x L", { record: false });
+  expect(JSON.stringify(a.state())).toBe(JSON.stringify(b.state()));
+});
+
+test("Rw' equals x' L'", () => {
+  const a = new CubeEngine();
+  const b = new CubeEngine();
+  a.applyMoves("Rw'", { record: false });
+  b.applyMoves("x' L'", { record: false });
+  expect(JSON.stringify(a.state())).toBe(JSON.stringify(b.state()));
+});
