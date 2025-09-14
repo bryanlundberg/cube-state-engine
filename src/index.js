@@ -223,6 +223,29 @@ export class CubeEngine {
   }
 
   /**
+   * Rotates the wide (UPPER two layers) clockwise or counterclockwise.
+   */
+  rotateUw(clockwise = true) {
+    if (clockwise) {
+      this.#rotateUw(true);
+      this.MOVES.push("Uw");
+    } else {
+      this.#rotateUw(false);
+      this.MOVES.push("Uw'");
+    }
+  }
+
+  #rotateUw(clockwise = true) {
+    if (clockwise) {
+      this.#rotateY(true);
+      this.#rotateD(true);
+    } else {
+      this.#rotateY(false);
+      this.#rotateD(false);
+    }
+  }
+
+  /**
    * Rotates the (x) axis clockwise or counterclockwise.
    */
   rotateX(clockwise = true) {
@@ -419,10 +442,20 @@ export class CubeEngine {
 
       switch (base) {
         case 'U':
-          exec(
-            () => (record ? this.rotateU(true) : this.#rotateU(true)),
-            () => (record ? this.rotateU(false) : this.#rotateU(false))
-          );
+          {
+            const isWide = /w/i.test(rest);
+            if (isWide) {
+              exec(
+                () => (record ? this.rotateUw(true) : this.#rotateUw(true)),
+                () => (record ? this.rotateUw(false) : this.#rotateUw(false))
+              );
+            } else {
+              exec(
+                () => (record ? this.rotateU(true) : this.#rotateU(true)),
+                () => (record ? this.rotateU(false) : this.#rotateU(false))
+              );
+            }
+          }
           break;
         case 'D':
           {
