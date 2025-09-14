@@ -736,3 +736,40 @@ test("Rw' equals x' L'", () => {
   b.applyMoves("x' L'", { record: false });
   expect(JSON.stringify(a.state())).toBe(JSON.stringify(b.state()));
 });
+
+test("ROTATE M then M' returns to solved", () => {
+  const cube = new CubeEngine();
+  cube.rotateM(true);
+  cube.rotateM(false);
+  expect(cube.isSolved()).toBe(true);
+});
+
+test("applyMoves supports M and M' and records when requested", () => {
+  const cube = new CubeEngine();
+  cube.applyMoves("M M' M2", { record: true });
+  // M2 should be recorded as two M quarter-turns
+  expect(cube.getMoves(true)).toBe("M M' M M");
+  expect(cube.getMoves(false)).toEqual(["M", "M'", "M", "M"]);
+});
+
+test("M equals Lw L'", () => {
+  const a = new CubeEngine();
+  const b = new CubeEngine();
+  a.applyMoves("M", { record: false });
+  b.applyMoves("Lw L'", { record: false });
+  expect(JSON.stringify(a.state())).toBe(JSON.stringify(b.state()));
+});
+
+test("M' equals Lw' L", () => {
+  const a = new CubeEngine();
+  const b = new CubeEngine();
+  a.applyMoves("M'", { record: false });
+  b.applyMoves("Lw' L", { record: false });
+  expect(JSON.stringify(a.state())).toBe(JSON.stringify(b.state()));
+});
+
+test("constructor scramble supports M and does not record history", () => {
+  const cube = new CubeEngine("M M'");
+  expect(cube.isSolved()).toBe(true);
+  expect(cube.getMoves(false)).toHaveLength(0);
+});

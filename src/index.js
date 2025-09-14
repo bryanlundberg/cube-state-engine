@@ -293,6 +293,29 @@ export class CubeEngine {
   }
 
   /**
+   * Rotates the middle slice (M) parallel to L/R. Clockwise corresponds to Lw followed by L'.
+   */
+  rotateM(clockwise = true) {
+    if (clockwise) {
+      this.#rotateM(true);
+      this.MOVES.push("M");
+    } else {
+      this.#rotateM(false);
+      this.MOVES.push("M'");
+    }
+  }
+
+  #rotateM(clockwise = true) {
+    if (clockwise) {
+      this.#rotateLw(true);
+      this.#rotateL(false);
+    } else {
+      this.#rotateLw(false);
+      this.#rotateL(true);
+    }
+  }
+
+  /**
    * Rotates the (x) axis clockwise or counterclockwise.
    */
   rotateX(clockwise = true) {
@@ -448,8 +471,8 @@ export class CubeEngine {
 
   /**
    * Applies a sequence of moves provided as a string.
-   * Supports: U, D, L, R, F, x, y and wide moves: Dw, Uw, Rw, Lw with optional ' for counterclockwise and 2 for double turns.
-   * @param {string} sequence - e.g. "R U' F R2 D Dw Uw Rw Rw' Lw Lw2"
+   * Supports: U, D, L, R, F, x, y; slice moves: M; and wide moves: Dw, Uw, Rw, Lw with optional ' for counterclockwise and 2 for double turns.
+   * @param {string} sequence - e.g. "R U' F R2 D Dw Uw Rw Rw' Lw Lw2 M M' M2"
    * @param {object} options - { record: boolean } whether to record moves in history (default true)
    */
   applyMoves(sequence, options = { record: false }) {
@@ -570,8 +593,14 @@ export class CubeEngine {
             () => (record ? this.rotateY(false) : this.#rotateY(false))
           );
           break;
+        case 'M':
+          exec(
+            () => (record ? this.rotateM(true) : this.#rotateM(true)),
+            () => (record ? this.rotateM(false) : this.#rotateM(false))
+          );
+          break;
         default:
-          // Unsupported token (including B, Z, M, etc.). Ignore silently for now.
+          // Unsupported token (including B, Z, etc.). Ignore silently for now.
           break;
       }
     }
