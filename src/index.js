@@ -514,6 +514,45 @@ export class CubeEngine {
   }
 
   /**
+   * Resets the cube to the solved state and clears the move history.
+   */
+  reset() {
+    this.STATES = {
+      UPPER: [
+        [COLOR.W[0], COLOR.W[1], COLOR.W[2]],
+        [COLOR.W[3], COLOR.W[4], COLOR.W[5]],
+        [COLOR.W[6], COLOR.W[7], COLOR.W[8]],
+      ],
+      LEFT: [
+        [COLOR.O[0], COLOR.O[1], COLOR.O[2]],
+        [COLOR.O[3], COLOR.O[4], COLOR.O[5]],
+        [COLOR.O[6], COLOR.O[7], COLOR.O[8]],
+      ],
+      FRONT: [
+        [COLOR.G[0], COLOR.G[1], COLOR.G[2]],
+        [COLOR.G[3], COLOR.G[4], COLOR.G[5]],
+        [COLOR.G[6], COLOR.G[7], COLOR.G[8]],
+      ],
+      RIGHT: [
+        [COLOR.R[0], COLOR.R[1], COLOR.R[2]],
+        [COLOR.R[3], COLOR.R[4], COLOR.R[5]],
+        [COLOR.R[6], COLOR.R[7], COLOR.R[8]],
+      ],
+      BACK: [
+        [COLOR.B[0], COLOR.B[1], COLOR.B[2]],
+        [COLOR.B[3], COLOR.B[4], COLOR.B[5]],
+        [COLOR.B[6], COLOR.B[7], COLOR.B[8]],
+      ],
+      DOWN: [
+        [COLOR.Y[0], COLOR.Y[1], COLOR.Y[2]],
+        [COLOR.Y[3], COLOR.Y[4], COLOR.Y[5]],
+        [COLOR.Y[6], COLOR.Y[7], COLOR.Y[8]],
+      ],
+    };
+    this.MOVES = [];
+  }
+
+  /**
    * Applies a sequence of moves provided as a string.
    * Supports: U, D, L, R, F, x, y, z; slice moves: M; and wide moves: Dw, Uw, Rw, Lw with optional ' for counterclockwise and 2 for double turns.
    * @param {string} sequence - e.g. "R U' F R2 D Dw Uw Rw Rw' Lw Lw2 M M' M2"

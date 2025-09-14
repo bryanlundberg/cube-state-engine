@@ -851,3 +851,16 @@ test("ROTATE z'", () => {
   };
   expect(JSON.stringify(state)).toBe(JSON.stringify(result));
 });
+
+
+test("reset should leave cube solved and clear history", () => {
+  const cube = new CubeEngine();
+  cube.applyMoves("R U' F R2 D", { record: true });
+  expect(cube.isSolved()).toBe(false);
+  expect(cube.getMoves(false).length).toBeGreaterThan(0);
+
+  cube.reset();
+
+  expect(cube.isSolved()).toBe(true);
+  expect(cube.getMoves(false)).toHaveLength(0);
+});
