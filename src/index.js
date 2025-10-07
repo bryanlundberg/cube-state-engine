@@ -1,7 +1,15 @@
 export class CubeEngine {
   MOVES = [];
+  size = 3; // Default cube size is 3x3
 
-  constructor(initialScramble = "") {
+  constructor(initialScramble = "", options = { size: 3 }) {
+    // Set cube size (only 2 or 3 are supported)
+    const allowedSizes = [2, 3];
+    this.size = allowedSizes.includes(options.size) ? options.size : 3;
+
+    // Initialize the cube state based on size
+    this.#initializeState();
+
     // If an initial scramble string is provided, apply it without recording moves
     if (typeof initialScramble === "string" && initialScramble.trim().length > 0) {
       this.#applyMovesFromString(initialScramble, false);
@@ -10,45 +18,31 @@ export class CubeEngine {
     }
   }
 
-  // States object for the rotation
-  STATES = {
-    UPPER: [
-      // (White)
-      [COLOR.W[0], COLOR.W[1], COLOR.W[2]],
-      [COLOR.W[3], COLOR.W[4], COLOR.W[5]],
-      [COLOR.W[6], COLOR.W[7], COLOR.W[8]],
-    ],
-    LEFT: [
-      // (Orange)
-      [COLOR.O[0], COLOR.O[1], COLOR.O[2]],
-      [COLOR.O[3], COLOR.O[4], COLOR.O[5]],
-      [COLOR.O[6], COLOR.O[7], COLOR.O[8]],
-    ],
-    FRONT: [
-      // (Green)
-      [COLOR.G[0], COLOR.G[1], COLOR.G[2]],
-      [COLOR.G[3], COLOR.G[4], COLOR.G[5]],
-      [COLOR.G[6], COLOR.G[7], COLOR.G[8]],
-    ],
-    RIGHT: [
-      // (Red)
-      [COLOR.R[0], COLOR.R[1], COLOR.R[2]],
-      [COLOR.R[3], COLOR.R[4], COLOR.R[5]],
-      [COLOR.R[6], COLOR.R[7], COLOR.R[8]],
-    ],
-    BACK: [
-      // (Blue)
-      [COLOR.B[0], COLOR.B[1], COLOR.B[2]],
-      [COLOR.B[3], COLOR.B[4], COLOR.B[5]],
-      [COLOR.B[6], COLOR.B[7], COLOR.B[8]],
-    ],
-    DOWN: [
-      // (Yellow)
-      [COLOR.Y[0], COLOR.Y[1], COLOR.Y[2]],
-      [COLOR.Y[3], COLOR.Y[4], COLOR.Y[5]],
-      [COLOR.Y[6], COLOR.Y[7], COLOR.Y[8]],
-    ],
-  };
+  // Initialize the cube state based on size
+  #initializeState() {
+    // States object for the rotation
+    this.STATES = {
+      UPPER: this.#createFace("W"),
+      LEFT: this.#createFace("O"),
+      FRONT: this.#createFace("G"),
+      RIGHT: this.#createFace("R"),
+      BACK: this.#createFace("B"),
+      DOWN: this.#createFace("Y"),
+    };
+  }
+
+  // Create a face matrix based on cube size
+  #createFace(color) {
+    const face = [];
+    for (let i = 0; i < this.size; i++) {
+      const row = [];
+      for (let j = 0; j < this.size; j++) {
+        row.push(color);
+      }
+      face.push(row);
+    }
+    return face;
+  }
 
   /**
    * Rotates the (UPPER) layer clockwise or counterclockwise.
@@ -230,6 +224,7 @@ export class CubeEngine {
    * Rotates the wide (DOWN two layers) clockwise or counterclockwise.
    */
   rotateDw(clockwise = true) {
+    if (this.size === 2) return;
     if (clockwise) {
       this.#rotateDw(true);
       this.MOVES.push("Dw");
@@ -253,6 +248,7 @@ export class CubeEngine {
    * Rotates the wide (UPPER two layers) clockwise or counterclockwise.
    */
   rotateUw(clockwise = true) {
+    if (this.size === 2) return;
     if (clockwise) {
       this.#rotateUw(true);
       this.MOVES.push("Uw");
@@ -276,6 +272,7 @@ export class CubeEngine {
    * Rotates the wide (RIGHT two layers) clockwise or counterclockwise.
    */
   rotateRw(clockwise = true) {
+    if (this.size === 2) return;
     if (clockwise) {
       this.#rotateRw(true);
       this.MOVES.push("Rw");
@@ -299,6 +296,7 @@ export class CubeEngine {
    * Rotates the wide (LEFT two layers) clockwise or counterclockwise.
    */
   rotateLw(clockwise = true) {
+    if (this.size === 2) return;
     if (clockwise) {
       this.#rotateLw(true);
       this.MOVES.push("Lw");
@@ -323,6 +321,7 @@ export class CubeEngine {
    * Rotates the middle slice (M) parallel to L/R. Clockwise corresponds to Lw followed by L'.
    */
   rotateM(clockwise = true) {
+    if (this.size === 2) return;
     if (clockwise) {
       this.#rotateM(true);
       this.MOVES.push("M");
@@ -474,21 +473,42 @@ export class CubeEngine {
    */
   #switchMatrix(matrix, clockwise = true) {
     const clone = structuredClone(matrix);
+    const size = this.size;
 
-    const tempMatrix = [...clone[0], ...clone[1], ...clone[2]];
+    // Flatten the matrix
+    let tempMatrix = [];
+    for (let i = 0; i < size; i++) {
+      tempMatrix = [...tempMatrix, ...clone[i]];
+    }
 
-    if (clockwise) {
-      return [
-        [tempMatrix[6], tempMatrix[3], tempMatrix[0]],
-        [tempMatrix[7], tempMatrix[4], tempMatrix[1]],
-        [tempMatrix[8], tempMatrix[5], tempMatrix[2]],
-      ];
+    if (size === 2) {
+      // For 2x2 cubes
+      if (clockwise) {
+        return [
+          [tempMatrix[2], tempMatrix[0]],
+          [tempMatrix[3], tempMatrix[1]]
+        ];
+      } else {
+        return [
+          [tempMatrix[1], tempMatrix[3]],
+          [tempMatrix[0], tempMatrix[2]]
+        ];
+      }
     } else {
-      return [
-        [tempMatrix[2], tempMatrix[5], tempMatrix[8]],
-        [tempMatrix[1], tempMatrix[4], tempMatrix[7]],
-        [tempMatrix[0], tempMatrix[3], tempMatrix[6]],
-      ];
+      // For 3x3 cubes (original logic)
+      if (clockwise) {
+        return [
+          [tempMatrix[6], tempMatrix[3], tempMatrix[0]],
+          [tempMatrix[7], tempMatrix[4], tempMatrix[1]],
+          [tempMatrix[8], tempMatrix[5], tempMatrix[2]],
+        ];
+      } else {
+        return [
+          [tempMatrix[2], tempMatrix[5], tempMatrix[8]],
+          [tempMatrix[1], tempMatrix[4], tempMatrix[7]],
+          [tempMatrix[0], tempMatrix[3], tempMatrix[6]],
+        ];
+      }
     }
   }
 
@@ -516,13 +536,15 @@ export class CubeEngine {
     };
 
     const layersSolved = Object.keys(temp).map((layer) => {
-      const mixedMatrix = [
-        ...temp[layer][0],
-        ...temp[layer][1],
-        ...temp[layer][2],
-      ];
 
-      const centerColor = mixedMatrix[4];
+      let mixedMatrix = [];
+      for (let i = 0; i < this.size; i++) {
+        mixedMatrix = [...mixedMatrix, ...temp[layer][i]];
+      }
+
+      // For a 2x2 cube, there is no center; we use the first color as reference
+      // For a 3x3 cube, we use the color of the center (position 4)
+      const centerColor = this.size === 2 ? mixedMatrix[0] : mixedMatrix[4];
 
       return mixedMatrix.every((currentColor) => currentColor === centerColor);
     });
@@ -544,38 +566,7 @@ export class CubeEngine {
    * Resets the cube to the solved state and clears the move history.
    */
   reset() {
-    this.STATES = {
-      UPPER: [
-        [COLOR.W[0], COLOR.W[1], COLOR.W[2]],
-        [COLOR.W[3], COLOR.W[4], COLOR.W[5]],
-        [COLOR.W[6], COLOR.W[7], COLOR.W[8]],
-      ],
-      LEFT: [
-        [COLOR.O[0], COLOR.O[1], COLOR.O[2]],
-        [COLOR.O[3], COLOR.O[4], COLOR.O[5]],
-        [COLOR.O[6], COLOR.O[7], COLOR.O[8]],
-      ],
-      FRONT: [
-        [COLOR.G[0], COLOR.G[1], COLOR.G[2]],
-        [COLOR.G[3], COLOR.G[4], COLOR.G[5]],
-        [COLOR.G[6], COLOR.G[7], COLOR.G[8]],
-      ],
-      RIGHT: [
-        [COLOR.R[0], COLOR.R[1], COLOR.R[2]],
-        [COLOR.R[3], COLOR.R[4], COLOR.R[5]],
-        [COLOR.R[6], COLOR.R[7], COLOR.R[8]],
-      ],
-      BACK: [
-        [COLOR.B[0], COLOR.B[1], COLOR.B[2]],
-        [COLOR.B[3], COLOR.B[4], COLOR.B[5]],
-        [COLOR.B[6], COLOR.B[7], COLOR.B[8]],
-      ],
-      DOWN: [
-        [COLOR.Y[0], COLOR.Y[1], COLOR.Y[2]],
-        [COLOR.Y[3], COLOR.Y[4], COLOR.Y[5]],
-        [COLOR.Y[6], COLOR.Y[7], COLOR.Y[8]],
-      ],
-    };
+    this.#initializeState();
     this.MOVES = [];
   }
 
@@ -604,11 +595,8 @@ export class CubeEngine {
       const isDouble = rest.includes("2");
       const isPrime = rest.includes("'");
 
-      const times = isDouble ? 2 : 1;
-
       const exec = (fnClockwise, fnCounter) => {
         if (isDouble) {
-          // Double turns ignore prime; do two clockwise quarter-turns
           fnClockwise();
           fnClockwise();
         } else {
