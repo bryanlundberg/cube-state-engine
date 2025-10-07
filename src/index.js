@@ -1,26 +1,21 @@
 export class CubeEngine {
   MOVES = [];
-  size = 3; // Default cube size is 3x3
+  size = 3;
 
   constructor(initialScramble = "", options = { size: 3 }) {
-    // Set cube size (only 2 or 3 are supported)
     const allowedSizes = [2, 3];
     this.size = allowedSizes.includes(options.size) ? options.size : 3;
 
-    // Initialize the cube state based on size
     this.#initializeState();
 
     // If an initial scramble string is provided, apply it without recording moves
     if (typeof initialScramble === "string" && initialScramble.trim().length > 0) {
       this.#applyMovesFromString(initialScramble, false);
-      // Ensure history is empty for initial position
       this.MOVES = [];
     }
   }
 
-  // Initialize the cube state based on size
   #initializeState() {
-    // States object for the rotation
     this.STATES = {
       UPPER: this.#createFace("W"),
       LEFT: this.#createFace("O"),
