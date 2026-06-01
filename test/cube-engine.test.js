@@ -774,6 +774,105 @@ test("constructor scramble supports M and does not record history", () => {
   expect(cube.getMoves(false)).toHaveLength(0);
 });
 
+// --- E slice (equatorial, parallel to U/D) ---
+
+test("ROTATE E then E' returns to solved", () => {
+  const cube = new CubeEngine();
+  cube.rotateE(true);
+  cube.rotateE(false);
+  expect(cube.isSolved()).toBe(true);
+});
+
+test("E four times returns to solved", () => {
+  const cube = new CubeEngine();
+  for (let i = 0; i < 4; i++) cube.rotateE(true);
+  expect(cube.isSolved()).toBe(true);
+});
+
+test("E equals Dw D'", () => {
+  const a = new CubeEngine();
+  const b = new CubeEngine();
+  a.applyMoves("E", { record: false });
+  b.applyMoves("Dw D'", { record: false });
+  expect(JSON.stringify(a.state())).toBe(JSON.stringify(b.state()));
+});
+
+test("E' equals Dw' D", () => {
+  const a = new CubeEngine();
+  const b = new CubeEngine();
+  a.applyMoves("E'", { record: false });
+  b.applyMoves("Dw' D", { record: false });
+  expect(JSON.stringify(a.state())).toBe(JSON.stringify(b.state()));
+});
+
+test("applyMoves supports E and E' and records when requested", () => {
+  const cube = new CubeEngine();
+  cube.applyMoves("E E' E2", { record: true });
+  expect(cube.getMoves(true)).toBe("E E' E E");
+  expect(cube.getMoves(false)).toEqual(["E", "E'", "E", "E"]);
+});
+
+// --- S slice (standing, parallel to F/B) ---
+
+test("ROTATE S then S' returns to solved", () => {
+  const cube = new CubeEngine();
+  cube.rotateS(true);
+  cube.rotateS(false);
+  expect(cube.isSolved()).toBe(true);
+});
+
+test("S four times returns to solved", () => {
+  const cube = new CubeEngine();
+  for (let i = 0; i < 4; i++) cube.rotateS(true);
+  expect(cube.isSolved()).toBe(true);
+});
+
+test("S equals Fw F'", () => {
+  const a = new CubeEngine();
+  const b = new CubeEngine();
+  a.applyMoves("S", { record: false });
+  b.applyMoves("Fw F'", { record: false });
+  expect(JSON.stringify(a.state())).toBe(JSON.stringify(b.state()));
+});
+
+test("S' equals Fw' F", () => {
+  const a = new CubeEngine();
+  const b = new CubeEngine();
+  a.applyMoves("S'", { record: false });
+  b.applyMoves("Fw' F", { record: false });
+  expect(JSON.stringify(a.state())).toBe(JSON.stringify(b.state()));
+});
+
+test("applyMoves supports S and S' and records when requested", () => {
+  const cube = new CubeEngine();
+  cube.applyMoves("S S' S2", { record: true });
+  expect(cube.getMoves(true)).toBe("S S' S S");
+  expect(cube.getMoves(false)).toEqual(["S", "S'", "S", "S"]);
+});
+
+// --- Slice direction sanity: M E S relative to face turns ---
+
+test("Fw equals z B", () => {
+  const a = new CubeEngine();
+  const b = new CubeEngine();
+  a.applyMoves("Fw", { record: false });
+  b.applyMoves("z B", { record: false });
+  expect(JSON.stringify(a.state())).toBe(JSON.stringify(b.state()));
+});
+
+test("slice moves preserve their own slice colors (centers move as a band)", () => {
+  // M follows L, E follows D, S follows F — applying all three then inverses solves
+  const cube = new CubeEngine();
+  cube.applyMoves("M E S S' E' M'", { record: false });
+  expect(cube.isSolved()).toBe(true);
+});
+
+test("constructor scramble supports E and S and does not record history", () => {
+  const cube = new CubeEngine("E E' S S'");
+  expect(cube.isSolved()).toBe(true);
+  expect(cube.getMoves(false)).toHaveLength(0);
+});
+
 test("ROTATE z", () => {
   const cube = new CubeEngine();
   cube.rotateZ(true);
