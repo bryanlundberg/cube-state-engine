@@ -402,6 +402,22 @@ function getPerms(size) {
   return perms;
 }
 
+/**
+ * Exposes the (cached) permutation tables for a given cube size.
+ *
+ * Each entry maps a move key to `{ cw, ccw }` permutation arrays such that
+ * `newState[i] = oldState[perm[i]]`. This is primarily an advanced/introspection
+ * helper: the solution analyzer uses it to derive the cube's sticker adjacency
+ * (which stickers form each edge/corner) without hardcoding any geometry.
+ *
+ * @param {number} size - 2 or 3 (defaults to 3).
+ * @returns {Object<string, {cw: number[], ccw: number[]}>}
+ */
+export function getMovePermutations(size = 3) {
+  const allowedSizes = [2, 3];
+  return getPerms(allowedSizes.includes(size) ? size : 3);
+}
+
 export class CubeEngine {
   MOVES = [];
   size = 3;
@@ -724,3 +740,6 @@ export const COLOR = {
   O: ["O", "O", "O", "O", "O", "O", "O", "O", "O"],
   Y: ["Y", "Y", "Y", "Y", "Y", "Y", "Y", "Y", "Y"],
 };
+
+// Solution analysis utilities (cross / F2L / OLL / PLL timing, CFOP detection).
+export { analyzeSolution, invertSequence } from "./analyzer.js";
