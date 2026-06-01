@@ -230,6 +230,7 @@ export class CubeEngine {
   }
 
   #rotateDw(clockwise = true) {
+    if (this.size === 2) return;
     if (clockwise) {
       this.#rotateY(false);
       this.#rotateU(true);
@@ -254,6 +255,7 @@ export class CubeEngine {
   }
 
   #rotateUw(clockwise = true) {
+    if (this.size === 2) return;
     if (clockwise) {
       this.#rotateY(true);
       this.#rotateD(true);
@@ -278,6 +280,7 @@ export class CubeEngine {
   }
 
   #rotateRw(clockwise = true) {
+    if (this.size === 2) return;
     if (clockwise) {
       this.#rotateX(true);
       this.#rotateL(true);
@@ -302,6 +305,7 @@ export class CubeEngine {
   }
 
   #rotateLw(clockwise = true) {
+    if (this.size === 2) return;
     if (clockwise) {
       // Lw equals x' R
       this.#rotateX(false);
@@ -327,12 +331,89 @@ export class CubeEngine {
   }
 
   #rotateM(clockwise = true) {
+    if (this.size === 2) return;
     if (clockwise) {
       this.#rotateLw(true);
       this.#rotateL(false);
     } else {
       this.#rotateLw(false);
       this.#rotateL(true);
+    }
+  }
+
+  /**
+   * Rotates the equatorial slice (E) parallel to U/D. Clockwise follows the D direction (E = Dw D').
+   */
+  rotateE(clockwise = true) {
+    if (this.size === 2) return;
+    if (clockwise) {
+      this.#rotateE(true);
+      this.MOVES.push("E");
+    } else {
+      this.#rotateE(false);
+      this.MOVES.push("E'");
+    }
+  }
+
+  #rotateE(clockwise = true) {
+    if (this.size === 2) return;
+    if (clockwise) {
+      this.#rotateDw(true);
+      this.#rotateD(false);
+    } else {
+      this.#rotateDw(false);
+      this.#rotateD(true);
+    }
+  }
+
+  /**
+   * Rotates the wide (FRONT two layers) clockwise or counterclockwise. Equivalent to z B.
+   */
+  rotateFw(clockwise = true) {
+    if (this.size === 2) return;
+    if (clockwise) {
+      this.#rotateFw(true);
+      this.MOVES.push("Fw");
+    } else {
+      this.#rotateFw(false);
+      this.MOVES.push("Fw'");
+    }
+  }
+
+  #rotateFw(clockwise = true) {
+    if (this.size === 2) return;
+    if (clockwise) {
+      // Fw equals z B
+      this.#rotateZ(true);
+      this.#rotateB(true);
+    } else {
+      this.#rotateZ(false);
+      this.#rotateB(false);
+    }
+  }
+
+  /**
+   * Rotates the standing slice (S) parallel to F/B. Clockwise follows the F direction (S = Fw F').
+   */
+  rotateS(clockwise = true) {
+    if (this.size === 2) return;
+    if (clockwise) {
+      this.#rotateS(true);
+      this.MOVES.push("S");
+    } else {
+      this.#rotateS(false);
+      this.MOVES.push("S'");
+    }
+  }
+
+  #rotateS(clockwise = true) {
+    if (this.size === 2) return;
+    if (clockwise) {
+      this.#rotateFw(true);
+      this.#rotateF(false);
+    } else {
+      this.#rotateFw(false);
+      this.#rotateF(true);
     }
   }
 
@@ -567,8 +648,8 @@ export class CubeEngine {
 
   /**
    * Applies a sequence of moves provided as a string.
-   * Supports: U, D, L, R, F, x, y, z; slice moves: M; and wide moves: Dw, Uw, Rw, Lw with optional ' for counterclockwise and 2 for double turns.
-   * @param {string} sequence - e.g. "R U' F R2 D Dw Uw Rw Rw' Lw Lw2 M M' M2"
+   * Supports: U, D, L, R, F, B, x, y, z; slice moves: M, E, S; and wide moves: Dw, Uw, Rw, Lw, Fw with optional ' for counterclockwise and 2 for double turns.
+   * @param {string} sequence - e.g. "R U' F R2 D Dw Uw Rw Rw' Lw Lw2 M M' M2 E E' S S2 Fw"
    * @param {object} options - { record: boolean } whether to record moves in history (default true)
    */
   applyMoves(sequence, options = { record: false }) {
@@ -669,10 +750,20 @@ export class CubeEngine {
           }
           break;
         case 'F':
-          exec(
-            () => (record ? this.rotateF(true) : this.#rotateF(true)),
-            () => (record ? this.rotateF(false) : this.#rotateF(false))
-          );
+          {
+            const isWide = /w/i.test(rest);
+            if (isWide) {
+              exec(
+                () => (record ? this.rotateFw(true) : this.#rotateFw(true)),
+                () => (record ? this.rotateFw(false) : this.#rotateFw(false))
+              );
+            } else {
+              exec(
+                () => (record ? this.rotateF(true) : this.#rotateF(true)),
+                () => (record ? this.rotateF(false) : this.#rotateF(false))
+              );
+            }
+          }
           break;
         case 'B':
           exec(
@@ -702,6 +793,18 @@ export class CubeEngine {
           exec(
             () => (record ? this.rotateM(true) : this.#rotateM(true)),
             () => (record ? this.rotateM(false) : this.#rotateM(false))
+          );
+          break;
+        case 'E':
+          exec(
+            () => (record ? this.rotateE(true) : this.#rotateE(true)),
+            () => (record ? this.rotateE(false) : this.#rotateE(false))
+          );
+          break;
+        case 'S':
+          exec(
+            () => (record ? this.rotateS(true) : this.#rotateS(true)),
+            () => (record ? this.rotateS(false) : this.#rotateS(false))
           );
           break;
         default:
