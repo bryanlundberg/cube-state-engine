@@ -12,6 +12,7 @@
 // moves that may appear in real speedsolves.
 
 import { CubeEngine, getMovePermutations } from "./index.js";
+import { simplifyMoves } from "./simplify.js";
 
 // Flat layout face order (must match CubeEngine.state()).
 const FACE_NAMES = ["UPPER", "LEFT", "FRONT", "RIGHT", "BACK", "DOWN"];
@@ -319,11 +320,18 @@ export function analyzeSolution(moves, options = {}) {
     .filter((x) => x.m.length > 0);
   const n = seq.length;
 
+  const simplifiedMoves = simplifyMoves(
+    (Array.isArray(moves) ? moves : []).filter((x) => x?.m)
+  );
+  const simplifiedCount = simplifiedMoves.length;
+
   const empty = {
     size,
     method: "unknown",
     solved: false,
     total: n > 0 ? seq[n - 1].t : 0,
+    tps: 0,
+    moves: simplifiedMoves,
     cross: null,
     f2l: [],
     oll: null,
@@ -365,11 +373,13 @@ export function analyzeSolution(moves, options = {}) {
   // Non-3x3: only the solved (PLL) milestone is meaningful.
   if (size !== 3) {
     const pll = milestone(pllIdxOnly, 0);
+    const total = seq[n - 1].t;
     return {
       ...empty,
       solved,
+      total,
+      tps: total > 0 ? simplifiedCount / (total / 1000) : 0,
       pll: pll.record,
-      total: seq[n - 1].t,
     };
   }
 
@@ -424,11 +434,14 @@ export function analyzeSolution(moves, options = {}) {
   const pllM = milestone(build.pllIdx, prevAt);
   const pll = pllM.record;
 
+  const total = seq[n - 1].t;
   return {
     size,
     method,
     solved,
-    total: seq[n - 1].t,
+    total,
+    tps: total > 0 ? simplifiedCount / (total / 1000) : 0,
+    moves: simplifiedMoves,
     cross,
     f2l,
     oll,
