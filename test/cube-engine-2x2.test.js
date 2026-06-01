@@ -93,6 +93,37 @@ describe("2x2 Cube Tests", () => {
     expect(afterMoveState).toBe(initialState);
   });
 
+  test("Slice moves (E, S) should have no effect on 2x2 cube", () => {
+    const virtualization = new CubeEngine("", { size: 2 });
+    const initialState = JSON.stringify(virtualization.state());
+
+    virtualization.rotateE(true);
+    virtualization.rotateS(true);
+
+    // States should be identical since there's no middle layer in a 2x2
+    expect(JSON.stringify(virtualization.state())).toBe(initialState);
+  });
+
+  test("Wide move (Fw) should have no effect on 2x2 cube", () => {
+    const virtualization = new CubeEngine("", { size: 2 });
+    const initialState = JSON.stringify(virtualization.state());
+
+    virtualization.rotateFw(true);
+
+    expect(JSON.stringify(virtualization.state())).toBe(initialState);
+  });
+
+  test("Slice/wide moves via applyMoves(record:false) are no-ops on 2x2", () => {
+    const virtualization = new CubeEngine("", { size: 2 });
+    const initialState = JSON.stringify(virtualization.state());
+
+    // record:false path calls the private methods directly; they must still guard size 2
+    virtualization.applyMoves("M E S Fw Rw Lw Uw Dw M' E' S'", { record: false });
+
+    expect(JSON.stringify(virtualization.state())).toBe(initialState);
+    expect(virtualization.getMoves(false)).toHaveLength(0);
+  });
+
   test("Basic algorithm execution on 2x2 cube", () => {
     const virtualization = new CubeEngine("", { size: 2 });
     // Execute a simple algorithm (Sune: R U R' U R U2 R')
