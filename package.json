@@ -21,7 +21,7 @@
   "homepage": "https://github.com/bryanlundberg/cube-state-engine#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/bryanlundberg/cube-state-engine"
+    "url": "git+https://github.com/bryanlundberg/cube-state-engine.git"
   },
   "devDependencies": {
     "@babel/core": "7.26.0",
