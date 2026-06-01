@@ -1,577 +1,98 @@
-export class CubeEngine {
-  MOVES = [];
-  size = 3;
+// Face order used across the flat sticker representation.
+// Index: 0=UPPER 1=LEFT 2=FRONT 3=RIGHT 4=BACK 5=DOWN
+const FACE_NAMES = ["UPPER", "LEFT", "FRONT", "RIGHT", "BACK", "DOWN"];
+const FACE_COLORS = ["W", "O", "G", "R", "B", "Y"];
 
-  constructor(initialScramble = "", options = { size: 3 }) {
-    const allowedSizes = [2, 3];
-    this.size = allowedSizes.includes(options.size) ? options.size : 3;
+// Moves that only affect inner/double layers and therefore are no-ops on a 2x2.
+const NOOP_SIZE2 = new Set(["Uw", "Dw", "Rw", "Lw", "Fw", "M", "E", "S"]);
 
-    this.#initializeState();
+// Maps each move key to the oracle method that performs it.
+const MOVE_FNS = {
+  U: "rotateU",
+  D: "rotateD",
+  L: "rotateL",
+  R: "rotateR",
+  F: "rotateF",
+  B: "rotateB",
+  x: "rotateX",
+  y: "rotateY",
+  z: "rotateZ",
+  M: "rotateM",
+  E: "rotateE",
+  S: "rotateS",
+  Uw: "rotateUw",
+  Dw: "rotateDw",
+  Rw: "rotateRw",
+  Lw: "rotateLw",
+  Fw: "rotateFw",
+};
 
-    // If an initial scramble string is provided, apply it without recording moves
-    if (typeof initialScramble === "string" && initialScramble.trim().length > 0) {
-      this.#applyMovesFromString(initialScramble, false);
-      this.MOVES = [];
-    }
-  }
+// Permutation tables are derived once per cube size and shared across instances.
+const PERM_CACHE = new Map();
 
-  #initializeState() {
-    this.STATES = {
-      UPPER: this.#createFace("W"),
-      LEFT: this.#createFace("O"),
-      FRONT: this.#createFace("G"),
-      RIGHT: this.#createFace("R"),
-      BACK: this.#createFace("B"),
-      DOWN: this.#createFace("Y"),
-    };
-  }
-
-  // Create a face matrix based on cube size
-  #createFace(color) {
-    const face = [];
-    for (let i = 0; i < this.size; i++) {
-      const row = [];
-      for (let j = 0; j < this.size; j++) {
-        row.push(color);
+/**
+ * Reference (matrix-based) cube used only to derive permutation tables.
+ *
+ * It reproduces the exact rotation algorithm the engine has always used, but
+ * operates on integer sticker tags (the flat index each sticker starts at).
+ * Applying a move and flattening the result yields a permutation array `perm`
+ * such that `newState[i] = oldState[perm[i]]`. This runs a handful of times per
+ * size at module load and is then cached, so the runtime hot path never touches
+ * matrices, structuredClone, or move composition.
+ */
+class _OracleCube {
+  constructor(size) {
+    this.size = size;
+    this.STATES = {};
+    for (let f = 0; f < FACE_NAMES.length; f++) {
+      const face = [];
+      for (let r = 0; r < size; r++) {
+        const row = [];
+        for (let c = 0; c < size; c++) {
+          row.push(f * size * size + r * size + c);
+        }
+        face.push(row);
       }
-      face.push(row);
-    }
-    return face;
-  }
-
-  /**
-   * Rotates the (UPPER) layer clockwise or counterclockwise.
-   */
-  rotateU(clockwise = true) {
-    if (clockwise) {
-      this.#rotateU(true);
-      this.MOVES.push("U");
-    } else {
-      this.#rotateU(false);
-      this.MOVES.push("U'");
+      this.STATES[FACE_NAMES[f]] = face;
     }
   }
 
-  #rotateU(clockwise = true) {
-    if (clockwise) {
-      this.STATES.UPPER = this.#switchMatrix(this.STATES.UPPER, true);
-
-      const tempFront = [...this.STATES.FRONT[0]];
-      const tempRight = [...this.STATES.RIGHT[0]];
-      const tempLeft = [...this.STATES.LEFT[0]];
-      const tempBack = [...this.STATES.BACK[0]];
-
-      this.STATES.FRONT[0] = [...tempRight];
-      this.STATES.LEFT[0] = [...tempFront];
-      this.STATES.BACK[0] = [...tempLeft];
-      this.STATES.RIGHT[0] = [...tempBack];
-    } else {
-      this.STATES.UPPER = this.#switchMatrix(this.STATES.UPPER, false);
-
-      const tempFront = [...this.STATES.FRONT[0]];
-      const tempRight = [...this.STATES.RIGHT[0]];
-      const tempLeft = [...this.STATES.LEFT[0]];
-      const tempBack = [...this.STATES.BACK[0]];
-
-      this.STATES.FRONT[0] = [...tempLeft];
-      this.STATES.LEFT[0] = [...tempBack];
-      this.STATES.BACK[0] = [...tempRight];
-      this.STATES.RIGHT[0] = [...tempFront];
+  // Concatenate every face row-major into a single flat array of tags.
+  flatten() {
+    const out = [];
+    for (const name of FACE_NAMES) {
+      const face = this.STATES[name];
+      for (let r = 0; r < this.size; r++) {
+        for (let c = 0; c < this.size; c++) {
+          out.push(face[r][c]);
+        }
+      }
     }
+    return out;
   }
 
-  /**
-   * Rotates the (FRONT) layer clockwise or counterclockwise.
-   */
-  rotateF(clockwise = true) {
-    if (clockwise) {
-      this.#rotateF(true);
-      this.MOVES.push("F");
-    } else {
-      this.#rotateF(false);
-      this.MOVES.push("F'");
-    }
-  }
-
-  #rotateF(clockwise = true) {
-    if (clockwise) {
-      this.#rotateX(true);
-      this.#rotateU(true);
-      this.#rotateX(false);
-    } else {
-      this.#rotateX(true);
-      this.#rotateU(false);
-      this.#rotateX(false);
-    }
-  }
-
-  /**
-   * Rotates the (BACK) layer clockwise or counterclockwise.
-   */
-  rotateB(clockwise = true) {
-    if (clockwise) {
-      this.#rotateB(true);
-      this.MOVES.push("B");
-    } else {
-      this.#rotateB(false);
-      this.MOVES.push("B'");
-    }
-  }
-
-  #rotateB(clockwise = true) {
-    // Implement B as y2 F y2
-    // Clockwise/counterclockwise direction is preserved through y2 conjugation
-    this.#rotateY(true);
-    this.#rotateY(true);
-    if (clockwise) {
-      this.#rotateF(true);
-    } else {
-      this.#rotateF(false);
-    }
-    this.#rotateY(false);
-    this.#rotateY(false);
-  }
-
-  /**
-   * Rotates the (RIGHT) layer clockwise or counterclockwise.
-   */
-  rotateR(clockwise = true) {
-    if (clockwise) {
-      this.#rotateR(true);
-      this.MOVES.push("R");
-    } else {
-      this.#rotateR(false);
-      this.MOVES.push("R'");
-    }
-  }
-
-  #rotateR(clockwise = true) {
-    if (clockwise) {
-      this.#rotateY(true);
-      this.#rotateX(true);
-      this.#rotateU(true);
-      this.#rotateX(false);
-      this.#rotateY(false);
-    } else {
-      this.#rotateY(true);
-      this.#rotateX(true);
-      this.#rotateU(false);
-      this.#rotateX(false);
-      this.#rotateY(false);
-    }
-  }
-
-  /**
-   * Rotates the (LEFT) layer clockwise or counterclockwise.
-   */
-  rotateL(clockwise = true) {
-    if (clockwise) {
-      this.#rotateL(true);
-      this.MOVES.push("L");
-    } else {
-      this.#rotateL(false);
-      this.MOVES.push("L'");
-    }
-  }
-
-  #rotateL(clockwise = true) {
-    if (clockwise) {
-      this.#rotateY(false);
-      this.#rotateX(true);
-      this.#rotateU(true);
-      this.#rotateX(false);
-      this.#rotateY(true);
-    } else {
-      this.#rotateY(false);
-      this.#rotateX(true);
-      this.#rotateU(false);
-      this.#rotateX(false);
-      this.#rotateY(true);
-    }
-  }
-
-  /**
-   * Rotates the (DOWN) layer clockwise or counterclockwise.
-   */
-  rotateD(clockwise = true) {
-    if (clockwise) {
-      this.#rotateD(true);
-      this.MOVES.push("D");
-    } else {
-      this.#rotateD(false);
-      this.MOVES.push("D'");
-    }
-  }
-
-  #rotateD(clockwise = true) {
-    if (clockwise) {
-      this.#rotateX(true);
-      this.#rotateF(true);
-      this.#rotateX(false);
-    } else {
-      this.#rotateX(true);
-      this.#rotateF(false);
-      this.#rotateX(false);
-    }
-  }
-
-  /**
-   * Rotates the wide (DOWN two layers) clockwise or counterclockwise.
-   */
-  rotateDw(clockwise = true) {
-    if (this.size === 2) return;
-    if (clockwise) {
-      this.#rotateDw(true);
-      this.MOVES.push("Dw");
-    } else {
-      this.#rotateDw(false);
-      this.MOVES.push("Dw'");
-    }
-  }
-
-  #rotateDw(clockwise = true) {
-    if (this.size === 2) return;
-    if (clockwise) {
-      this.#rotateY(false);
-      this.#rotateU(true);
-    } else {
-      this.#rotateY(true);
-      this.#rotateU(false);
-    }
-  }
-
-  /**
-   * Rotates the wide (UPPER two layers) clockwise or counterclockwise.
-   */
-  rotateUw(clockwise = true) {
-    if (this.size === 2) return;
-    if (clockwise) {
-      this.#rotateUw(true);
-      this.MOVES.push("Uw");
-    } else {
-      this.#rotateUw(false);
-      this.MOVES.push("Uw'");
-    }
-  }
-
-  #rotateUw(clockwise = true) {
-    if (this.size === 2) return;
-    if (clockwise) {
-      this.#rotateY(true);
-      this.#rotateD(true);
-    } else {
-      this.#rotateY(false);
-      this.#rotateD(false);
-    }
-  }
-
-  /**
-   * Rotates the wide (RIGHT two layers) clockwise or counterclockwise.
-   */
-  rotateRw(clockwise = true) {
-    if (this.size === 2) return;
-    if (clockwise) {
-      this.#rotateRw(true);
-      this.MOVES.push("Rw");
-    } else {
-      this.#rotateRw(false);
-      this.MOVES.push("Rw'");
-    }
-  }
-
-  #rotateRw(clockwise = true) {
-    if (this.size === 2) return;
-    if (clockwise) {
-      this.#rotateX(true);
-      this.#rotateL(true);
-    } else {
-      this.#rotateX(false);
-      this.#rotateL(false);
-    }
-  }
-
-  /**
-   * Rotates the wide (LEFT two layers) clockwise or counterclockwise.
-   */
-  rotateLw(clockwise = true) {
-    if (this.size === 2) return;
-    if (clockwise) {
-      this.#rotateLw(true);
-      this.MOVES.push("Lw");
-    } else {
-      this.#rotateLw(false);
-      this.MOVES.push("Lw'");
-    }
-  }
-
-  #rotateLw(clockwise = true) {
-    if (this.size === 2) return;
-    if (clockwise) {
-      // Lw equals x' R
-      this.#rotateX(false);
-      this.#rotateR(true);
-    } else {
-      this.#rotateX(true);
-      this.#rotateR(false);
-    }
-  }
-
-  /**
-   * Rotates the middle slice (M) parallel to L/R. Clockwise corresponds to Lw followed by L'.
-   */
-  rotateM(clockwise = true) {
-    if (this.size === 2) return;
-    if (clockwise) {
-      this.#rotateM(true);
-      this.MOVES.push("M");
-    } else {
-      this.#rotateM(false);
-      this.MOVES.push("M'");
-    }
-  }
-
-  #rotateM(clockwise = true) {
-    if (this.size === 2) return;
-    if (clockwise) {
-      this.#rotateLw(true);
-      this.#rotateL(false);
-    } else {
-      this.#rotateLw(false);
-      this.#rotateL(true);
-    }
-  }
-
-  /**
-   * Rotates the equatorial slice (E) parallel to U/D. Clockwise follows the D direction (E = Dw D').
-   */
-  rotateE(clockwise = true) {
-    if (this.size === 2) return;
-    if (clockwise) {
-      this.#rotateE(true);
-      this.MOVES.push("E");
-    } else {
-      this.#rotateE(false);
-      this.MOVES.push("E'");
-    }
-  }
-
-  #rotateE(clockwise = true) {
-    if (this.size === 2) return;
-    if (clockwise) {
-      this.#rotateDw(true);
-      this.#rotateD(false);
-    } else {
-      this.#rotateDw(false);
-      this.#rotateD(true);
-    }
-  }
-
-  /**
-   * Rotates the wide (FRONT two layers) clockwise or counterclockwise. Equivalent to z B.
-   */
-  rotateFw(clockwise = true) {
-    if (this.size === 2) return;
-    if (clockwise) {
-      this.#rotateFw(true);
-      this.MOVES.push("Fw");
-    } else {
-      this.#rotateFw(false);
-      this.MOVES.push("Fw'");
-    }
-  }
-
-  #rotateFw(clockwise = true) {
-    if (this.size === 2) return;
-    if (clockwise) {
-      // Fw equals z B
-      this.#rotateZ(true);
-      this.#rotateB(true);
-    } else {
-      this.#rotateZ(false);
-      this.#rotateB(false);
-    }
-  }
-
-  /**
-   * Rotates the standing slice (S) parallel to F/B. Clockwise follows the F direction (S = Fw F').
-   */
-  rotateS(clockwise = true) {
-    if (this.size === 2) return;
-    if (clockwise) {
-      this.#rotateS(true);
-      this.MOVES.push("S");
-    } else {
-      this.#rotateS(false);
-      this.MOVES.push("S'");
-    }
-  }
-
-  #rotateS(clockwise = true) {
-    if (this.size === 2) return;
-    if (clockwise) {
-      this.#rotateFw(true);
-      this.#rotateF(false);
-    } else {
-      this.#rotateFw(false);
-      this.#rotateF(true);
-    }
-  }
-
-  /**
-   * Rotates the (x) axis clockwise or counterclockwise.
-   */
-  rotateX(clockwise = true) {
-    if (clockwise) {
-      this.#rotateX(true);
-      this.MOVES.push("x");
-    } else {
-      this.#rotateX(false);
-      this.MOVES.push("x'");
-    }
-  }
-
-  #rotateX(clockwise = true) {
-    const tempFront = structuredClone(this.STATES.FRONT);
-    const tempDown = structuredClone(this.STATES.DOWN);
-    const tempUpper = structuredClone(this.STATES.UPPER);
-    const tempBack = structuredClone(this.STATES.BACK);
-    const tempLeft = structuredClone(this.STATES.LEFT);
-    const tempRight = structuredClone(this.STATES.RIGHT);
-
-    if (clockwise) {
-      // Balance the rotation
-      this.STATES.LEFT = this.#switchMatrix(tempLeft, false);
-      this.STATES.RIGHT = this.#switchMatrix(tempRight, true);
-
-      // Rotate mid X axis
-      this.STATES.FRONT = [...tempDown];
-      this.STATES.UPPER = [...tempFront];
-
-      // Special permutation (BACK view elements)
-      this.STATES.BACK = this.#specialFlip(tempUpper);
-      this.STATES.DOWN = this.#specialFlip(tempBack);
-    } else {
-      this.STATES.LEFT = this.#switchMatrix(tempLeft, true);
-      this.STATES.RIGHT = this.#switchMatrix(tempRight, false);
-
-      this.STATES.FRONT = [...tempUpper];
-      this.STATES.DOWN = [...tempFront];
-
-      this.STATES.BACK = this.#specialFlip(tempDown);
-      this.STATES.UPPER = this.#specialFlip(tempBack);
-    }
-  }
-
-  /**
-   * Rotates the (z) axis clockwise or counterclockwise.
-   */
-  rotateZ(clockwise = true) {
-    if (clockwise) {
-      this.#rotateZ(true);
-      this.MOVES.push("z");
-    } else {
-      this.#rotateZ(false);
-      this.MOVES.push("z'");
-    }
-  }
-
-  #rotateZ(clockwise = true) {
-    const tempUpper = structuredClone(this.STATES.UPPER);
-    const tempRight = structuredClone(this.STATES.RIGHT);
-    const tempDown = structuredClone(this.STATES.DOWN);
-    const tempLeft = structuredClone(this.STATES.LEFT);
-    const tempFront = structuredClone(this.STATES.FRONT);
-    const tempBack = structuredClone(this.STATES.BACK);
-
-    if (clockwise) {
-      // Rotate faces on the rotation axis
-      this.STATES.FRONT = this.#switchMatrix(tempFront, true);
-      this.STATES.BACK = this.#switchMatrix(tempBack, false);
-
-      // Cycle U -> R -> D -> L -> U with proper orientation
-      this.STATES.RIGHT = this.#switchMatrix(tempUpper, true);
-      this.STATES.DOWN = this.#switchMatrix(tempRight, true);
-      this.STATES.LEFT = this.#switchMatrix(tempDown, true);
-      this.STATES.UPPER = this.#switchMatrix(tempLeft, true);
-    } else {
-      // Counterclockwise
-      this.STATES.FRONT = this.#switchMatrix(tempFront, false);
-      this.STATES.BACK = this.#switchMatrix(tempBack, true);
-
-      // Cycle U -> L -> D -> R -> U (inverse of clockwise), rotate CCW
-      this.STATES.RIGHT = this.#switchMatrix(tempDown, false);
-      this.STATES.DOWN = this.#switchMatrix(tempLeft, false);
-      this.STATES.LEFT = this.#switchMatrix(tempUpper, false);
-      this.STATES.UPPER = this.#switchMatrix(tempRight, false);
-    }
-  }
-
-  /**
-   * Rotates the (y) axis clockwise or counterclockwise.
-   */
-  rotateY(clockwise = true) {
-    if (clockwise) {
-      this.#rotateY(true);
-      this.MOVES.push("y");
-    } else {
-      this.#rotateY(false);
-      this.MOVES.push("y'");
-    }
-  }
-
-  #rotateY(clockwise = true) {
-    const tempFront = structuredClone(this.STATES.FRONT);
-    const tempRight = structuredClone(this.STATES.RIGHT);
-    const tempBack = structuredClone(this.STATES.BACK);
-    const tempLeft = structuredClone(this.STATES.LEFT);
-
-    if (clockwise) {
-      this.STATES.UPPER = this.#switchMatrix(this.STATES.UPPER, true);
-      this.STATES.DOWN = this.#switchMatrix(this.STATES.DOWN, false);
-
-      this.STATES.FRONT = [...tempRight];
-      this.STATES.RIGHT = [...tempBack];
-      this.STATES.LEFT = [...tempFront];
-      this.STATES.BACK = [...tempLeft];
-    } else {
-      this.STATES.UPPER = this.#switchMatrix(this.STATES.UPPER, false);
-      this.STATES.DOWN = this.#switchMatrix(this.STATES.DOWN, true);
-
-      this.STATES.FRONT = [...tempLeft];
-      this.STATES.RIGHT = [...tempFront];
-      this.STATES.LEFT = [...tempBack];
-      this.STATES.BACK = [...tempRight];
-    }
-  }
-
-  /**
-   * Rotate the entire face in the direction set
-   */
-  #switchMatrix(matrix, clockwise = true) {
+  switchMatrix(matrix, clockwise = true) {
     const clone = structuredClone(matrix);
     const size = this.size;
 
-    // Flatten the matrix
     let tempMatrix = [];
     for (let i = 0; i < size; i++) {
       tempMatrix = [...tempMatrix, ...clone[i]];
     }
 
     if (size === 2) {
-      // For 2x2 cubes
       if (clockwise) {
         return [
           [tempMatrix[2], tempMatrix[0]],
-          [tempMatrix[3], tempMatrix[1]]
+          [tempMatrix[3], tempMatrix[1]],
         ];
       } else {
         return [
           [tempMatrix[1], tempMatrix[3]],
-          [tempMatrix[0], tempMatrix[2]]
+          [tempMatrix[0], tempMatrix[2]],
         ];
       }
     } else {
-      // For 3x3 cubes (original logic)
       if (clockwise) {
         return [
           [tempMatrix[6], tempMatrix[3], tempMatrix[0]],
@@ -588,10 +109,481 @@ export class CubeEngine {
     }
   }
 
-  #specialFlip(matrix) {
+  specialFlip(matrix) {
     return structuredClone(matrix)
       .reverse()
       .map((row) => [...row].reverse());
+  }
+
+  rotateU(clockwise = true) {
+    if (clockwise) {
+      this.STATES.UPPER = this.switchMatrix(this.STATES.UPPER, true);
+
+      const tempFront = [...this.STATES.FRONT[0]];
+      const tempRight = [...this.STATES.RIGHT[0]];
+      const tempLeft = [...this.STATES.LEFT[0]];
+      const tempBack = [...this.STATES.BACK[0]];
+
+      this.STATES.FRONT[0] = [...tempRight];
+      this.STATES.LEFT[0] = [...tempFront];
+      this.STATES.BACK[0] = [...tempLeft];
+      this.STATES.RIGHT[0] = [...tempBack];
+    } else {
+      this.STATES.UPPER = this.switchMatrix(this.STATES.UPPER, false);
+
+      const tempFront = [...this.STATES.FRONT[0]];
+      const tempRight = [...this.STATES.RIGHT[0]];
+      const tempLeft = [...this.STATES.LEFT[0]];
+      const tempBack = [...this.STATES.BACK[0]];
+
+      this.STATES.FRONT[0] = [...tempLeft];
+      this.STATES.LEFT[0] = [...tempBack];
+      this.STATES.BACK[0] = [...tempRight];
+      this.STATES.RIGHT[0] = [...tempFront];
+    }
+  }
+
+  rotateF(clockwise = true) {
+    if (clockwise) {
+      this.rotateX(true);
+      this.rotateU(true);
+      this.rotateX(false);
+    } else {
+      this.rotateX(true);
+      this.rotateU(false);
+      this.rotateX(false);
+    }
+  }
+
+  rotateB(clockwise = true) {
+    this.rotateY(true);
+    this.rotateY(true);
+    if (clockwise) {
+      this.rotateF(true);
+    } else {
+      this.rotateF(false);
+    }
+    this.rotateY(false);
+    this.rotateY(false);
+  }
+
+  rotateR(clockwise = true) {
+    if (clockwise) {
+      this.rotateY(true);
+      this.rotateX(true);
+      this.rotateU(true);
+      this.rotateX(false);
+      this.rotateY(false);
+    } else {
+      this.rotateY(true);
+      this.rotateX(true);
+      this.rotateU(false);
+      this.rotateX(false);
+      this.rotateY(false);
+    }
+  }
+
+  rotateL(clockwise = true) {
+    if (clockwise) {
+      this.rotateY(false);
+      this.rotateX(true);
+      this.rotateU(true);
+      this.rotateX(false);
+      this.rotateY(true);
+    } else {
+      this.rotateY(false);
+      this.rotateX(true);
+      this.rotateU(false);
+      this.rotateX(false);
+      this.rotateY(true);
+    }
+  }
+
+  rotateD(clockwise = true) {
+    if (clockwise) {
+      this.rotateX(true);
+      this.rotateF(true);
+      this.rotateX(false);
+    } else {
+      this.rotateX(true);
+      this.rotateF(false);
+      this.rotateX(false);
+    }
+  }
+
+  rotateDw(clockwise = true) {
+    if (this.size === 2) return;
+    if (clockwise) {
+      this.rotateY(false);
+      this.rotateU(true);
+    } else {
+      this.rotateY(true);
+      this.rotateU(false);
+    }
+  }
+
+  rotateUw(clockwise = true) {
+    if (this.size === 2) return;
+    if (clockwise) {
+      this.rotateY(true);
+      this.rotateD(true);
+    } else {
+      this.rotateY(false);
+      this.rotateD(false);
+    }
+  }
+
+  rotateRw(clockwise = true) {
+    if (this.size === 2) return;
+    if (clockwise) {
+      this.rotateX(true);
+      this.rotateL(true);
+    } else {
+      this.rotateX(false);
+      this.rotateL(false);
+    }
+  }
+
+  rotateLw(clockwise = true) {
+    if (this.size === 2) return;
+    if (clockwise) {
+      this.rotateX(false);
+      this.rotateR(true);
+    } else {
+      this.rotateX(true);
+      this.rotateR(false);
+    }
+  }
+
+  rotateM(clockwise = true) {
+    if (this.size === 2) return;
+    if (clockwise) {
+      this.rotateLw(true);
+      this.rotateL(false);
+    } else {
+      this.rotateLw(false);
+      this.rotateL(true);
+    }
+  }
+
+  rotateE(clockwise = true) {
+    if (this.size === 2) return;
+    if (clockwise) {
+      this.rotateDw(true);
+      this.rotateD(false);
+    } else {
+      this.rotateDw(false);
+      this.rotateD(true);
+    }
+  }
+
+  rotateFw(clockwise = true) {
+    if (this.size === 2) return;
+    if (clockwise) {
+      this.rotateZ(true);
+      this.rotateB(true);
+    } else {
+      this.rotateZ(false);
+      this.rotateB(false);
+    }
+  }
+
+  rotateS(clockwise = true) {
+    if (this.size === 2) return;
+    if (clockwise) {
+      this.rotateFw(true);
+      this.rotateF(false);
+    } else {
+      this.rotateFw(false);
+      this.rotateF(true);
+    }
+  }
+
+  rotateX(clockwise = true) {
+    const tempFront = structuredClone(this.STATES.FRONT);
+    const tempDown = structuredClone(this.STATES.DOWN);
+    const tempUpper = structuredClone(this.STATES.UPPER);
+    const tempBack = structuredClone(this.STATES.BACK);
+    const tempLeft = structuredClone(this.STATES.LEFT);
+    const tempRight = structuredClone(this.STATES.RIGHT);
+
+    if (clockwise) {
+      this.STATES.LEFT = this.switchMatrix(tempLeft, false);
+      this.STATES.RIGHT = this.switchMatrix(tempRight, true);
+
+      this.STATES.FRONT = [...tempDown];
+      this.STATES.UPPER = [...tempFront];
+
+      this.STATES.BACK = this.specialFlip(tempUpper);
+      this.STATES.DOWN = this.specialFlip(tempBack);
+    } else {
+      this.STATES.LEFT = this.switchMatrix(tempLeft, true);
+      this.STATES.RIGHT = this.switchMatrix(tempRight, false);
+
+      this.STATES.FRONT = [...tempUpper];
+      this.STATES.DOWN = [...tempFront];
+
+      this.STATES.BACK = this.specialFlip(tempDown);
+      this.STATES.UPPER = this.specialFlip(tempBack);
+    }
+  }
+
+  rotateZ(clockwise = true) {
+    const tempUpper = structuredClone(this.STATES.UPPER);
+    const tempRight = structuredClone(this.STATES.RIGHT);
+    const tempDown = structuredClone(this.STATES.DOWN);
+    const tempLeft = structuredClone(this.STATES.LEFT);
+    const tempFront = structuredClone(this.STATES.FRONT);
+    const tempBack = structuredClone(this.STATES.BACK);
+
+    if (clockwise) {
+      this.STATES.FRONT = this.switchMatrix(tempFront, true);
+      this.STATES.BACK = this.switchMatrix(tempBack, false);
+
+      this.STATES.RIGHT = this.switchMatrix(tempUpper, true);
+      this.STATES.DOWN = this.switchMatrix(tempRight, true);
+      this.STATES.LEFT = this.switchMatrix(tempDown, true);
+      this.STATES.UPPER = this.switchMatrix(tempLeft, true);
+    } else {
+      this.STATES.FRONT = this.switchMatrix(tempFront, false);
+      this.STATES.BACK = this.switchMatrix(tempBack, true);
+
+      this.STATES.RIGHT = this.switchMatrix(tempDown, false);
+      this.STATES.DOWN = this.switchMatrix(tempLeft, false);
+      this.STATES.LEFT = this.switchMatrix(tempUpper, false);
+      this.STATES.UPPER = this.switchMatrix(tempRight, false);
+    }
+  }
+
+  rotateY(clockwise = true) {
+    const tempFront = structuredClone(this.STATES.FRONT);
+    const tempRight = structuredClone(this.STATES.RIGHT);
+    const tempBack = structuredClone(this.STATES.BACK);
+    const tempLeft = structuredClone(this.STATES.LEFT);
+
+    if (clockwise) {
+      this.STATES.UPPER = this.switchMatrix(this.STATES.UPPER, true);
+      this.STATES.DOWN = this.switchMatrix(this.STATES.DOWN, false);
+
+      this.STATES.FRONT = [...tempRight];
+      this.STATES.RIGHT = [...tempBack];
+      this.STATES.LEFT = [...tempFront];
+      this.STATES.BACK = [...tempLeft];
+    } else {
+      this.STATES.UPPER = this.switchMatrix(this.STATES.UPPER, false);
+      this.STATES.DOWN = this.switchMatrix(this.STATES.DOWN, true);
+
+      this.STATES.FRONT = [...tempLeft];
+      this.STATES.RIGHT = [...tempFront];
+      this.STATES.LEFT = [...tempBack];
+      this.STATES.BACK = [...tempRight];
+    }
+  }
+}
+
+// Build a single move's permutation by applying it to a tagged oracle cube.
+function buildPerm(size, fnName, clockwise) {
+  const oracle = new _OracleCube(size);
+  oracle[fnName](clockwise);
+  return oracle.flatten();
+}
+
+// Build (and cache) the full clockwise/counterclockwise permutation set for a size.
+function getPerms(size) {
+  if (PERM_CACHE.has(size)) return PERM_CACHE.get(size);
+  const perms = {};
+  for (const key of Object.keys(MOVE_FNS)) {
+    perms[key] = {
+      cw: buildPerm(size, MOVE_FNS[key], true),
+      ccw: buildPerm(size, MOVE_FNS[key], false),
+    };
+  }
+  PERM_CACHE.set(size, perms);
+  return perms;
+}
+
+export class CubeEngine {
+  MOVES = [];
+  size = 3;
+  #stickers = [];
+  #perms = null;
+
+  constructor(initialScramble = "", options = { size: 3 }) {
+    const allowedSizes = [2, 3];
+    this.size = allowedSizes.includes(options.size) ? options.size : 3;
+    this.#perms = getPerms(this.size);
+
+    this.#initializeState();
+
+    // If an initial scramble string is provided, apply it without recording moves
+    if (typeof initialScramble === "string" && initialScramble.trim().length > 0) {
+      this.#applyMovesFromString(initialScramble, false);
+      this.MOVES = [];
+    }
+  }
+
+  #initializeState() {
+    const per = this.size * this.size;
+    const stickers = new Array(FACE_COLORS.length * per);
+    for (let f = 0; f < FACE_COLORS.length; f++) {
+      const color = FACE_COLORS[f];
+      const base = f * per;
+      for (let i = 0; i < per; i++) {
+        stickers[base + i] = color;
+      }
+    }
+    this.#stickers = stickers;
+  }
+
+  // Apply a precomputed permutation: newState[i] = oldState[perm[i]].
+  #applyPerm(perm) {
+    const current = this.#stickers;
+    const next = new Array(current.length);
+    for (let i = 0; i < current.length; i++) {
+      next[i] = current[perm[i]];
+    }
+    this.#stickers = next;
+  }
+
+  // Core move dispatch. dir is "cw" or "ccw"; record controls history logging.
+  #apply(key, dir, record) {
+    if (this.size === 2 && NOOP_SIZE2.has(key)) return;
+    this.#applyPerm(this.#perms[key][dir]);
+    if (record) this.MOVES.push(dir === "ccw" ? key + "'" : key);
+  }
+
+  // Build a single face matrix from the flat sticker array.
+  #faceMatrix(faceIndex) {
+    const size = this.size;
+    const base = faceIndex * size * size;
+    const matrix = [];
+    for (let r = 0; r < size; r++) {
+      const row = [];
+      for (let c = 0; c < size; c++) {
+        row.push(this.#stickers[base + r * size + c]);
+      }
+      matrix.push(row);
+    }
+    return matrix;
+  }
+
+  /**
+   * Rotates the (UPPER) layer clockwise or counterclockwise.
+   */
+  rotateU(clockwise = true) {
+    this.#apply("U", clockwise ? "cw" : "ccw", true);
+  }
+
+  /**
+   * Rotates the (FRONT) layer clockwise or counterclockwise.
+   */
+  rotateF(clockwise = true) {
+    this.#apply("F", clockwise ? "cw" : "ccw", true);
+  }
+
+  /**
+   * Rotates the (BACK) layer clockwise or counterclockwise.
+   */
+  rotateB(clockwise = true) {
+    this.#apply("B", clockwise ? "cw" : "ccw", true);
+  }
+
+  /**
+   * Rotates the (RIGHT) layer clockwise or counterclockwise.
+   */
+  rotateR(clockwise = true) {
+    this.#apply("R", clockwise ? "cw" : "ccw", true);
+  }
+
+  /**
+   * Rotates the (LEFT) layer clockwise or counterclockwise.
+   */
+  rotateL(clockwise = true) {
+    this.#apply("L", clockwise ? "cw" : "ccw", true);
+  }
+
+  /**
+   * Rotates the (DOWN) layer clockwise or counterclockwise.
+   */
+  rotateD(clockwise = true) {
+    this.#apply("D", clockwise ? "cw" : "ccw", true);
+  }
+
+  /**
+   * Rotates the wide (DOWN two layers) clockwise or counterclockwise.
+   */
+  rotateDw(clockwise = true) {
+    this.#apply("Dw", clockwise ? "cw" : "ccw", true);
+  }
+
+  /**
+   * Rotates the wide (UPPER two layers) clockwise or counterclockwise.
+   */
+  rotateUw(clockwise = true) {
+    this.#apply("Uw", clockwise ? "cw" : "ccw", true);
+  }
+
+  /**
+   * Rotates the wide (RIGHT two layers) clockwise or counterclockwise.
+   */
+  rotateRw(clockwise = true) {
+    this.#apply("Rw", clockwise ? "cw" : "ccw", true);
+  }
+
+  /**
+   * Rotates the wide (LEFT two layers) clockwise or counterclockwise.
+   */
+  rotateLw(clockwise = true) {
+    this.#apply("Lw", clockwise ? "cw" : "ccw", true);
+  }
+
+  /**
+   * Rotates the middle slice (M) parallel to L/R. Clockwise corresponds to Lw followed by L'.
+   */
+  rotateM(clockwise = true) {
+    this.#apply("M", clockwise ? "cw" : "ccw", true);
+  }
+
+  /**
+   * Rotates the equatorial slice (E) parallel to U/D. Clockwise follows the D direction (E = Dw D').
+   */
+  rotateE(clockwise = true) {
+    this.#apply("E", clockwise ? "cw" : "ccw", true);
+  }
+
+  /**
+   * Rotates the wide (FRONT two layers) clockwise or counterclockwise. Equivalent to z B.
+   */
+  rotateFw(clockwise = true) {
+    this.#apply("Fw", clockwise ? "cw" : "ccw", true);
+  }
+
+  /**
+   * Rotates the standing slice (S) parallel to F/B. Clockwise follows the F direction (S = Fw F').
+   */
+  rotateS(clockwise = true) {
+    this.#apply("S", clockwise ? "cw" : "ccw", true);
+  }
+
+  /**
+   * Rotates the (x) axis clockwise or counterclockwise.
+   */
+  rotateX(clockwise = true) {
+    this.#apply("x", clockwise ? "cw" : "ccw", true);
+  }
+
+  /**
+   * Rotates the (z) axis clockwise or counterclockwise.
+   */
+  rotateZ(clockwise = true) {
+    this.#apply("z", clockwise ? "cw" : "ccw", true);
+  }
+
+  /**
+   * Rotates the (y) axis clockwise or counterclockwise.
+   */
+  rotateY(clockwise = true) {
+    this.#apply("y", clockwise ? "cw" : "ccw", true);
   }
 
   /**
@@ -599,7 +591,12 @@ export class CubeEngine {
    */
   state() {
     return {
-      ...this.STATES,
+      UPPER: this.#faceMatrix(0),
+      LEFT: this.#faceMatrix(1),
+      FRONT: this.#faceMatrix(2),
+      RIGHT: this.#faceMatrix(3),
+      BACK: this.#faceMatrix(4),
+      DOWN: this.#faceMatrix(5),
     };
   }
 
@@ -607,25 +604,17 @@ export class CubeEngine {
    * Indicates if the cube is solve or not in all layers.
    */
   isSolved() {
-    const temp = {
-      ...this.STATES,
-    };
-
-    const layersSolved = Object.keys(temp).map((layer) => {
-
-      let mixedMatrix = [];
-      for (let i = 0; i < this.size; i++) {
-        mixedMatrix = [...mixedMatrix, ...temp[layer][i]];
+    const per = this.size * this.size;
+    // 2x2 has no center, so use the first sticker; 3x3 uses the center (index 4).
+    const centerOffset = this.size === 2 ? 0 : 4;
+    for (let f = 0; f < FACE_COLORS.length; f++) {
+      const base = f * per;
+      const centerColor = this.#stickers[base + centerOffset];
+      for (let i = 0; i < per; i++) {
+        if (this.#stickers[base + i] !== centerColor) return false;
       }
-
-      // For a 2x2 cube, there is no center; we use the first color as reference
-      // For a 3x3 cube, we use the color of the center (position 4)
-      const centerColor = this.size === 2 ? mixedMatrix[0] : mixedMatrix[4];
-
-      return mixedMatrix.every((currentColor) => currentColor === centerColor);
-    });
-
-    return layersSolved.every((isLayerSolved) => isLayerSolved);
+    }
+    return true;
   }
 
   /**
@@ -657,7 +646,7 @@ export class CubeEngine {
     this.#applyMovesFromString(sequence, record);
   }
 
-  // Internal: parses and applies moves. If record=false, uses private methods to avoid logging.
+  // Internal: parses and applies moves, optionally recording them in history.
   #applyMovesFromString(sequence, record = true) {
     if (typeof sequence !== "string") return;
     const tokens = sequence
@@ -670,146 +659,58 @@ export class CubeEngine {
       const rest = token.slice(1);
       const isDouble = rest.includes("2");
       const isPrime = rest.includes("'");
+      const isWide = /w/i.test(rest);
 
-      const exec = (fnClockwise, fnCounter) => {
-        if (isDouble) {
-          fnClockwise();
-          fnClockwise();
-        } else {
-          if (isPrime) {
-            fnCounter();
-          } else {
-            fnClockwise();
-          }
-        }
-      };
-
+      let key;
       switch (base) {
-        case 'U':
-          {
-            const isWide = /w/i.test(rest);
-            if (isWide) {
-              exec(
-                () => (record ? this.rotateUw(true) : this.#rotateUw(true)),
-                () => (record ? this.rotateUw(false) : this.#rotateUw(false))
-              );
-            } else {
-              exec(
-                () => (record ? this.rotateU(true) : this.#rotateU(true)),
-                () => (record ? this.rotateU(false) : this.#rotateU(false))
-              );
-            }
-          }
+        case "U":
+          key = isWide ? "Uw" : "U";
           break;
-        case 'D':
-          {
-            const isWide = /w/i.test(rest);
-            if (isWide) {
-              exec(
-                () => (record ? this.rotateDw(true) : this.#rotateDw(true)),
-                () => (record ? this.rotateDw(false) : this.#rotateDw(false))
-              );
-            } else {
-              exec(
-                () => (record ? this.rotateD(true) : this.#rotateD(true)),
-                () => (record ? this.rotateD(false) : this.#rotateD(false))
-              );
-            }
-          }
+        case "D":
+          key = isWide ? "Dw" : "D";
           break;
-        case 'L':
-          {
-            const isWide = /w/i.test(rest);
-            if (isWide) {
-              exec(
-                () => (record ? this.rotateLw(true) : this.#rotateLw(true)),
-                () => (record ? this.rotateLw(false) : this.#rotateLw(false))
-              );
-            } else {
-              exec(
-                () => (record ? this.rotateL(true) : this.#rotateL(true)),
-                () => (record ? this.rotateL(false) : this.#rotateL(false))
-              );
-            }
-          }
+        case "L":
+          key = isWide ? "Lw" : "L";
           break;
-        case 'R':
-          {
-            const isWide = /w/i.test(rest);
-            if (isWide) {
-              exec(
-                () => (record ? this.rotateRw(true) : this.#rotateRw(true)),
-                () => (record ? this.rotateRw(false) : this.#rotateRw(false))
-              );
-            } else {
-              exec(
-                () => (record ? this.rotateR(true) : this.#rotateR(true)),
-                () => (record ? this.rotateR(false) : this.#rotateR(false))
-              );
-            }
-          }
+        case "R":
+          key = isWide ? "Rw" : "R";
           break;
-        case 'F':
-          {
-            const isWide = /w/i.test(rest);
-            if (isWide) {
-              exec(
-                () => (record ? this.rotateFw(true) : this.#rotateFw(true)),
-                () => (record ? this.rotateFw(false) : this.#rotateFw(false))
-              );
-            } else {
-              exec(
-                () => (record ? this.rotateF(true) : this.#rotateF(true)),
-                () => (record ? this.rotateF(false) : this.#rotateF(false))
-              );
-            }
-          }
+        case "F":
+          key = isWide ? "Fw" : "F";
           break;
-        case 'B':
-          exec(
-            () => (record ? this.rotateB(true) : this.#rotateB(true)),
-            () => (record ? this.rotateB(false) : this.#rotateB(false))
-          );
+        case "B":
+          key = "B";
           break;
-        case 'x':
-          exec(
-            () => (record ? this.rotateX(true) : this.#rotateX(true)),
-            () => (record ? this.rotateX(false) : this.#rotateX(false))
-          );
+        case "x":
+          key = "x";
           break;
-        case 'y':
-          exec(
-            () => (record ? this.rotateY(true) : this.#rotateY(true)),
-            () => (record ? this.rotateY(false) : this.#rotateY(false))
-          );
+        case "y":
+          key = "y";
           break;
-        case 'z':
-          exec(
-            () => (record ? this.rotateZ(true) : this.#rotateZ(true)),
-            () => (record ? this.rotateZ(false) : this.#rotateZ(false))
-          );
+        case "z":
+          key = "z";
           break;
-        case 'M':
-          exec(
-            () => (record ? this.rotateM(true) : this.#rotateM(true)),
-            () => (record ? this.rotateM(false) : this.#rotateM(false))
-          );
+        case "M":
+          key = "M";
           break;
-        case 'E':
-          exec(
-            () => (record ? this.rotateE(true) : this.#rotateE(true)),
-            () => (record ? this.rotateE(false) : this.#rotateE(false))
-          );
+        case "E":
+          key = "E";
           break;
-        case 'S':
-          exec(
-            () => (record ? this.rotateS(true) : this.#rotateS(true)),
-            () => (record ? this.rotateS(false) : this.#rotateS(false))
-          );
+        case "S":
+          key = "S";
           break;
         default:
-          // Unsupported token (including B, Z, etc.). Ignore silently for now.
-          break;
+          // Unsupported token. Ignore silently for now.
+          continue;
+      }
+
+      if (isDouble) {
+        this.#apply(key, "cw", record);
+        this.#apply(key, "cw", record);
+      } else if (isPrime) {
+        this.#apply(key, "ccw", record);
+      } else {
+        this.#apply(key, "cw", record);
       }
     }
   }
