@@ -743,3 +743,6 @@ export const COLOR = {
 
 // Solution analysis utilities (cross / F2L / OLL / PLL timing, CFOP detection).
 export { analyzeSolution, invertSequence } from "./analyzer.js";
+
+// Move-sequence simplifier (joins identical quarter turns into doubles).
+export { simplifyMoves } from "./simplify.js";
