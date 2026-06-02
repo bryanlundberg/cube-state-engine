@@ -1,4 +1,8 @@
 import { CubeEngine, analyzeSolution, invertSequence } from "../src/index.js";
+import cfop1 from "./cfop-1.json";
+import cfop2 from "./cfop-2.json";
+import roux1 from "./roux-1.json";
+import roux2 from "./roux-2.json";
 
 // Builds a `[{ m, t }]` solution from a token array, assigning each move a
 // cumulative timestamp (200ms per move by default).
@@ -34,10 +38,12 @@ describe("analyzeSolution - basics", () => {
     const solution = invertSequence(scramble); // guaranteed to solve
     const out = analyzeSolution(timed(solution));
 
+    // Terminal milestone is PLL (CFOP) or LSE (Roux), depending on detection.
+    const finalStage = out.pll ?? out.lse;
     expect(out.solved).toBe(true);
-    expect(out.pll).not.toBeNull();
-    expect(out.pll.moveIndex).toBe(solution.length - 1);
-    expect(out.pll.at).toBe(out.total);
+    expect(finalStage).not.toBeNull();
+    expect(finalStage.moveIndex).toBe(solution.length - 1);
+    expect(finalStage.at).toBe(out.total);
   });
 
   test("every face cross is complete by the end of a solving sequence", () => {
@@ -45,12 +51,13 @@ describe("analyzeSolution - basics", () => {
     const solution = invertSequence(scramble);
     const out = analyzeSolution(timed(solution));
 
+    const finalStage = out.pll ?? out.lse;
     const colors = Object.keys(out.allCrosses);
     expect(colors.length).toBe(6);
     for (const color of colors) {
       expect(out.allCrosses[color]).not.toBeNull();
       expect(out.allCrosses[color].moveIndex).toBeLessThanOrEqual(
-        out.pll.moveIndex
+        finalStage.moveIndex
       );
     }
   });
@@ -132,7 +139,7 @@ describe("analyzeSolution - staged CFOP solve", () => {
     const moves = timed(invertSequence("R U F".split(" ")), 500);
     const out = analyzeSolution(moves);
     expect(out.total).toBe(moves[moves.length - 1].t);
-    expect(out.pll.at).toBe(out.total);
+    expect((out.pll ?? out.lse).at).toBe(out.total);
   });
 });
 
@@ -175,5 +182,126 @@ describe("geometry derivation", () => {
     for (const color of Object.keys(out.allCrosses)) {
       expect(out.allCrosses[color]).not.toBeNull();
     }
+  });
+});
+
+describe("analyzeSolution - method discrimination on real solves", () => {
+  // The two methods must never be confused: CFOP solves report CFOP, Roux
+  // solves report Roux, each with only its own milestone fields populated.
+  const cases = [
+    ["cfop-1", "CFOP", cfop1.replay.moves],
+    ["cfop-2", "CFOP", cfop2.replay.moves],
+    ["roux-1", "Roux", roux1.replay.moves],
+    ["roux-2", "Roux", roux2.replay.moves],
+  ];
+
+  test.each(cases)("detects %s as %s", (_name, expected, moves) => {
+    const out = analyzeSolution(moves);
+    expect(out.method).toBe(expected);
+    expect(out.solved).toBe(true);
+
+    const cfopPopulated = out.cross != null && out.pll != null;
+    const rouxPopulated = out.firstBlock != null && out.lse != null;
+    if (expected === "CFOP") {
+      expect(cfopPopulated).toBe(true);
+      expect(rouxPopulated).toBe(false);
+    } else {
+      expect(rouxPopulated).toBe(true);
+      expect(cfopPopulated).toBe(false);
+    }
+  });
+});
+
+describe("analyzeSolution - CFOP on real solves", () => {
+  // Two genuine human CFOP solves recorded move-by-move with cumulative times.
+  const solves = [
+    ["cfop-1", cfop1.replay.moves],
+    ["cfop-2", cfop2.replay.moves],
+  ];
+
+  test.each(solves)("classifies %s as a solved CFOP solve", (_name, moves) => {
+    const out = analyzeSolution(moves);
+    expect(out.method).toBe("CFOP");
+    expect(out.solved).toBe(true);
+  });
+
+  test.each(solves)("reports the seven CFOP milestones in order for %s", (_name, moves) => {
+    const out = analyzeSolution(moves);
+    expect(out.cross).not.toBeNull();
+    expect(out.f2l).toHaveLength(4);
+    expect(out.oll).not.toBeNull();
+    expect(out.pll).not.toBeNull();
+
+    // Non-decreasing completion indices: cross <= f2l* <= oll <= pll.
+    expect(out.cross.moveIndex).toBeLessThanOrEqual(out.f2l[0].moveIndex);
+    for (let i = 1; i < out.f2l.length; i++) {
+      expect(out.f2l[i - 1].moveIndex).toBeLessThanOrEqual(out.f2l[i].moveIndex);
+    }
+    expect(out.f2l[3].moveIndex).toBeLessThanOrEqual(out.oll.moveIndex);
+    expect(out.oll.moveIndex).toBeLessThanOrEqual(out.pll.moveIndex);
+
+    // PLL is the final solved state, at the last recorded move.
+    expect(out.pll.at).toBe(out.total);
+  });
+
+  test.each(solves)("leaves Roux fields empty for %s", (_name, moves) => {
+    const out = analyzeSolution(moves);
+    expect(out.firstBlock).toBeNull();
+    expect(out.secondBlock).toBeNull();
+    expect(out.cmll).toBeNull();
+    expect(out.lse).toBeNull();
+  });
+});
+
+describe("analyzeSolution - Roux on real solves", () => {
+  // Two genuine human Roux solves recorded move-by-move with cumulative times.
+  const solves = [
+    ["roux-1", roux1.replay.moves],
+    ["roux-2", roux2.replay.moves],
+  ];
+
+  test.each(solves)("classifies %s as a solved Roux solve", (_name, moves) => {
+    const out = analyzeSolution(moves);
+    expect(out.method).toBe("Roux");
+    expect(out.solved).toBe(true);
+  });
+
+  test.each(solves)("reports the four Roux milestones in order for %s", (_name, moves) => {
+    const out = analyzeSolution(moves);
+    expect(out.firstBlock).not.toBeNull();
+    expect(out.secondBlock).not.toBeNull();
+    expect(out.cmll).not.toBeNull();
+    expect(out.lse).not.toBeNull();
+
+    // Non-decreasing completion indices: 1st block <= 2nd block <= CMLL <= LSE.
+    expect(out.firstBlock.moveIndex).toBeLessThanOrEqual(out.secondBlock.moveIndex);
+    expect(out.secondBlock.moveIndex).toBeLessThanOrEqual(out.cmll.moveIndex);
+    expect(out.cmll.moveIndex).toBeLessThanOrEqual(out.lse.moveIndex);
+
+    // LSE is the final solved state, at the last recorded move.
+    expect(out.lse.at).toBe(out.total);
+  });
+
+  test.each(solves)("leaves CFOP fields empty for %s", (_name, moves) => {
+    const out = analyzeSolution(moves);
+    expect(out.cross).toBeNull();
+    expect(out.f2l).toEqual([]);
+    expect(out.oll).toBeNull();
+    expect(out.pll).toBeNull();
+  });
+
+  test.each(solves)("the two blocks are built on opposite faces for %s", (_name, moves) => {
+    const out = analyzeSolution(moves);
+    // Block side labels are the center colors; opposite faces never share one.
+    expect(out.firstBlock.side).not.toBe(out.secondBlock.side);
+    expect(typeof out.firstBlock.side).toBe("string");
+  });
+
+  test.each(solves)("stage durations chain from the previous milestone for %s", (_name, moves) => {
+    const out = analyzeSolution(moves);
+    expect(out.firstBlock.duration).toBe(out.firstBlock.at);
+    expect(out.secondBlock.duration).toBe(out.secondBlock.at - out.firstBlock.at);
+    expect(out.cmll.duration).toBe(out.cmll.at - out.secondBlock.at);
+    expect(out.lse.duration).toBe(out.lse.at - out.cmll.at);
   });
 });
