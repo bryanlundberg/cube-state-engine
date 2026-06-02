@@ -3,6 +3,8 @@ import cfop1 from "./cfop-1.json";
 import cfop2 from "./cfop-2.json";
 import roux1 from "./roux-1.json";
 import roux2 from "./roux-2.json";
+import roux3 from "./roux-3.json";
+import roux4 from "./roux-4.json";
 
 // Builds a `[{ m, t }]` solution from a token array, assigning each move a
 // cumulative timestamp (200ms per move by default).
@@ -193,6 +195,8 @@ describe("analyzeSolution - method discrimination on real solves", () => {
     ["cfop-2", "CFOP", cfop2.replay.moves],
     ["roux-1", "Roux", roux1.replay.moves],
     ["roux-2", "Roux", roux2.replay.moves],
+    ["roux-3", "Roux", roux3.replay.moves],
+    ["roux-4", "Roux", roux4.replay.moves],
   ];
 
   test.each(cases)("detects %s as %s", (_name, expected, moves) => {
@@ -258,6 +262,8 @@ describe("analyzeSolution - Roux on real solves", () => {
   const solves = [
     ["roux-1", roux1.replay.moves],
     ["roux-2", roux2.replay.moves],
+    ["roux-3", roux3.replay.moves],
+    ["roux-4", roux4.replay.moves],
   ];
 
   test.each(solves)("classifies %s as a solved Roux solve", (_name, moves) => {
@@ -288,6 +294,19 @@ describe("analyzeSolution - Roux on real solves", () => {
     expect(out.f2l).toEqual([]);
     expect(out.oll).toBeNull();
     expect(out.pll).toBeNull();
+  });
+
+  // Guards against degenerate staging where a later stage is detected on the
+  // SAME move as the previous one (duration 0). This happened when block
+  // detection compared against the live centers without allowing the slice
+  // between the blocks to drift: the blocks only "completed" once the cube was
+  // already solved, collapsing CMLL onto the second block. Each stage of a real
+  // solve finishes on a strictly later move than the one before it.
+  test.each(solves)("each Roux stage completes on a strictly later move for %s", (_name, moves) => {
+    const out = analyzeSolution(moves);
+    expect(out.firstBlock.moveIndex).toBeLessThan(out.secondBlock.moveIndex);
+    expect(out.secondBlock.moveIndex).toBeLessThan(out.cmll.moveIndex);
+    expect(out.cmll.moveIndex).toBeLessThan(out.lse.moveIndex);
   });
 
   test.each(solves)("the two blocks are built on opposite faces for %s", (_name, moves) => {

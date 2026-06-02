@@ -244,14 +244,27 @@ function rouxBlockPieces(geo, sideFace, upFace) {
 }
 
 // A Roux block is done when its three edges and two corners are all placed.
-function rouxBlockDone(st, centers, geo, sideFace, upFace) {
+// As with CMLL, the block stays intact while the slice between the two blocks is
+// unaligned, but the block's down/front/back facelets are compared against the
+// floating centers -- which the slice displaces. So we accept the block if ANY
+// of the four slice rotations makes its pieces match the centers: the slice
+// moves neither the blocks nor their corners/edges (none sit on the slice), it
+// only re-aligns the floating centers. Without this, a perfectly built block
+// reads as broken for most of a Roux solve, because the slice is scrambled until
+// LSE. `slicePerm` is the slice perpendicular to the block axis.
+function rouxBlockDone(st, geo, sideFace, upFace, slicePerm) {
   const { edges, corners } = rouxBlockPieces(geo, sideFace, upFace);
   if (edges.length !== 3 || corners.length !== 2) return false;
-  for (const e of edges)
-    if (!slotCorrect(st, centers, e.indices, geo.per)) return false;
-  for (const c of corners)
-    if (!slotCorrect(st, centers, c.indices, geo.per)) return false;
-  return true;
+  let cur = st;
+  for (let m = 0; m < 4; m++) {
+    if (m > 0) cur = applyPerm(cur, slicePerm);
+    const centers = centersOf(cur, geo);
+    const ok =
+      edges.every((e) => slotCorrect(cur, centers, e.indices, geo.per)) &&
+      corners.every((c) => slotCorrect(cur, centers, c.indices, geo.per));
+    if (ok) return true;
+  }
+  return false;
 }
 
 // Applies a permutation (out[i] = st[perm[i]]) to a flat sticker array.
@@ -262,15 +275,17 @@ function applyPerm(st, perm) {
 }
 
 // CMLL is done when the four corners touching the up face are solved, allowing
-// the M slice to be unaligned: we accept the state if ANY of the four M-slice
-// rotations makes those corners correct. M moves neither the corners nor the
-// L/R blocks, only the U/F/D/B centers (and M-slice edges), so this captures
-// exactly "last-layer corners solved, M not necessarily aligned yet".
-function cmllDone(st, geo, upFace, mPerm) {
+// the slice between the two blocks to be unaligned: we accept the state if ANY
+// of the four slice rotations makes those corners correct. The slice moves
+// neither the corners nor the two blocks, only the four floating centers (and
+// slice edges) around the block axis, so this captures exactly "last-layer
+// corners solved, slice not necessarily aligned yet". `slicePerm` must be the
+// slice perpendicular to the block axis (M for L/R blocks, E for U/D, S for F/B).
+function cmllDone(st, geo, upFace, slicePerm) {
   let cur = st;
   const corners = geo.cornersByFace(upFace);
   for (let m = 0; m < 4; m++) {
-    if (m > 0) cur = applyPerm(cur, mPerm);
+    if (m > 0) cur = applyPerm(cur, slicePerm);
     const centers = centersOf(cur, geo);
     if (corners.every((c) => slotCorrect(cur, centers, c.indices, geo.per)))
       return true;
@@ -350,16 +365,15 @@ function isCFOP(build) {
 // while the first block holds, CMLL only once both blocks hold, and LSE is the
 // fully solved cube. The first block is whichever of the two opposite side faces
 // finishes its block earliest; the other side is the second block.
-function buildForRoux(snapshots, geo, sideA, upFace, mPerm) {
+function buildForRoux(snapshots, geo, sideA, upFace, slicePerm) {
   const n = snapshots.length;
   const sideB = geo.opposite[sideA];
 
-  const centersAt = snapshots.map((st) => centersOf(st, geo));
-  const aDone = snapshots.map((st, i) =>
-    rouxBlockDone(st, centersAt[i], geo, sideA, upFace)
+  const aDone = snapshots.map((st) =>
+    rouxBlockDone(st, geo, sideA, upFace, slicePerm)
   );
-  const bDone = snapshots.map((st, i) =>
-    rouxBlockDone(st, centersAt[i], geo, sideB, upFace)
+  const bDone = snapshots.map((st) =>
+    rouxBlockDone(st, geo, sideB, upFace, slicePerm)
   );
   const aIdx = completionIndex(aDone);
   const bIdx = completionIndex(bDone);
@@ -383,7 +397,7 @@ function buildForRoux(snapshots, geo, sideA, upFace, mPerm) {
 
   const cmllIdx = completionIndex(
     snapshots.map(
-      (st, i) => secondBlockBools[i] && cmllDone(st, geo, upFace, mPerm)
+      (st, i) => secondBlockBools[i] && cmllDone(st, geo, upFace, slicePerm)
     )
   );
   const lseIdx = completionIndex(snapshots.map((st) => isSolvedFlat(st, geo.per)));
@@ -527,12 +541,19 @@ export function analyzeSolution(moves, options = {}) {
   // Stage the solve as Roux (1st block -> 2nd block -> CMLL -> LSE) on every
   // orientation. Each candidate fixes a side face and a perpendicular up face;
   // buildForRoux assigns first/second block by which side finishes earliest.
+  // The "floating" slice that block/CMLL detection lets drift is the one
+  // perpendicular to the block axis: M for L/R blocks, E for U/D, S for F/B.
   // Pick the valid candidate whose first block completes earliest.
-  const mPerm = getMovePermutations(size)["M"].cw;
+  const perms = getMovePermutations(size);
+  const axisSlicePerm = (face) => {
+    if (face === 1 || face === 3) return perms["M"].cw; // L/R axis
+    if (face === 0 || face === 5) return perms["E"].cw; // U/D axis
+    return perms["S"].cw; // F/B axis
+  };
   const rouxCandidates = [];
   for (let s = 0; s < 6; s++) {
     for (const u of geo.neighbors[s]) {
-      rouxCandidates.push(buildForRoux(snapshots, geo, s, u, mPerm));
+      rouxCandidates.push(buildForRoux(snapshots, geo, s, u, axisSlicePerm(s)));
     }
   }
   const rouxBuild =
