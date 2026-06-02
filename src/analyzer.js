@@ -225,6 +225,59 @@ function ollDone(st, geo, color) {
   return true;
 }
 
+// --- Roux geometry --------------------------------------------------------
+
+// The pieces of a Roux 1x2x3 block, parameterized by the block's side face and
+// the up face (which fixes down = opposite[up]). The block holds the side
+// center, the side's three edges that do NOT touch the up face, and the side's
+// two corners that DO touch the down face. The center always matches itself, so
+// only edges/corners need checking.
+function rouxBlockPieces(geo, sideFace, upFace) {
+  const downFace = geo.opposite[upFace];
+  const edges = geo
+    .edgesByFace(sideFace)
+    .filter((e) => !e.faces.includes(upFace));
+  const corners = geo
+    .cornersByFace(sideFace)
+    .filter((c) => c.faces.includes(downFace));
+  return { edges, corners };
+}
+
+// A Roux block is done when its three edges and two corners are all placed.
+function rouxBlockDone(st, centers, geo, sideFace, upFace) {
+  const { edges, corners } = rouxBlockPieces(geo, sideFace, upFace);
+  if (edges.length !== 3 || corners.length !== 2) return false;
+  for (const e of edges)
+    if (!slotCorrect(st, centers, e.indices, geo.per)) return false;
+  for (const c of corners)
+    if (!slotCorrect(st, centers, c.indices, geo.per)) return false;
+  return true;
+}
+
+// Applies a permutation (out[i] = st[perm[i]]) to a flat sticker array.
+function applyPerm(st, perm) {
+  const out = new Array(st.length);
+  for (let i = 0; i < st.length; i++) out[i] = st[perm[i]];
+  return out;
+}
+
+// CMLL is done when the four corners touching the up face are solved, allowing
+// the M slice to be unaligned: we accept the state if ANY of the four M-slice
+// rotations makes those corners correct. M moves neither the corners nor the
+// L/R blocks, only the U/F/D/B centers (and M-slice edges), so this captures
+// exactly "last-layer corners solved, M not necessarily aligned yet".
+function cmllDone(st, geo, upFace, mPerm) {
+  let cur = st;
+  const corners = geo.cornersByFace(upFace);
+  for (let m = 0; m < 4; m++) {
+    if (m > 0) cur = applyPerm(cur, mPerm);
+    const centers = centersOf(cur, geo);
+    if (corners.every((c) => slotCorrect(cur, centers, c.indices, geo.per)))
+      return true;
+  }
+  return false;
+}
+
 // Index of the move that COMPLETES a stage: the first move after which the
 // condition holds, provided the stage is genuinely achieved by the end of the
 // solve. Later moves are allowed to break it transiently (a turn mid-algorithm
@@ -292,15 +345,72 @@ function isCFOP(build) {
   return ollIdx >= lastF2L && pllIdx >= ollIdx;
 }
 
+// Builds the Roux milestone indices for one (sideFace, upFace) orientation.
+// Detection is cumulative, mirroring buildForCross: the second block only counts
+// while the first block holds, CMLL only once both blocks hold, and LSE is the
+// fully solved cube. The first block is whichever of the two opposite side faces
+// finishes its block earliest; the other side is the second block.
+function buildForRoux(snapshots, geo, sideA, upFace, mPerm) {
+  const n = snapshots.length;
+  const sideB = geo.opposite[sideA];
+
+  const centersAt = snapshots.map((st) => centersOf(st, geo));
+  const aDone = snapshots.map((st, i) =>
+    rouxBlockDone(st, centersAt[i], geo, sideA, upFace)
+  );
+  const bDone = snapshots.map((st, i) =>
+    rouxBlockDone(st, centersAt[i], geo, sideB, upFace)
+  );
+  const aIdx = completionIndex(aDone);
+  const bIdx = completionIndex(bDone);
+
+  // First block = the side that completes earliest; second block = the other.
+  let firstSide = sideA;
+  let secondSide = sideB;
+  let fbBools = aDone;
+  let sbBools = bDone;
+  if ((bIdx ?? Infinity) < (aIdx ?? Infinity)) {
+    firstSide = sideB;
+    secondSide = sideA;
+    fbBools = bDone;
+    sbBools = aDone;
+  }
+
+  const fbIdx = completionIndex(fbBools);
+  // Second block gated by the first block holding at the same instant.
+  const secondBlockBools = snapshots.map((_, i) => fbBools[i] && sbBools[i]);
+  const sbIdx = completionIndex(secondBlockBools);
+
+  const cmllIdx = completionIndex(
+    snapshots.map(
+      (st, i) => secondBlockBools[i] && cmllDone(st, geo, upFace, mPerm)
+    )
+  );
+  const lseIdx = completionIndex(snapshots.map((st) => isSolvedFlat(st, geo.per)));
+
+  return { firstSide, secondSide, upFace, fbIdx, sbIdx, cmllIdx, lseIdx };
+}
+
+// Does this breakdown follow the Roux order: 1st block -> 2nd block -> CMLL -> LSE?
+function isRoux(build) {
+  const { fbIdx, sbIdx, cmllIdx, lseIdx } = build;
+  if (fbIdx == null || sbIdx == null || cmllIdx == null || lseIdx == null)
+    return false;
+  return fbIdx <= sbIdx && sbIdx <= cmllIdx && cmllIdx <= lseIdx;
+}
+
 /**
  * Analyzes a solution and returns the timing of each method milestone.
  *
  * @param {Array<{m: string, t: number}>} moves - Solution moves with cumulative
  *   timestamps. `m` is a move token; `t` is elapsed ms up to that move.
- * @param {{size?: number}} [options] - Cube size (defaults to 3). CFOP staging
+ * @param {{size?: number}} [options] - Cube size (defaults to 3). Method staging
  *   is only computed for 3x3; other sizes report the solved (PLL) time only.
- * @returns {object} Breakdown with `method`, `total`, `cross`, `f2l[]`, `oll`,
- *   `pll` and `allCrosses` (cross time per face color).
+ * @returns {object} Breakdown with `method` ("CFOP", "Roux" or "unknown"),
+ *   `total`, `tps` and `allCrosses` (cross time per face color). For CFOP it
+ *   carries `cross`, `f2l[]`, `oll`, `pll`; for Roux it carries `firstBlock`,
+ *   `secondBlock`, `cmll`, `lse` (the other method's fields are null). Each
+ *   block record also includes the `side` center color it was built on.
  */
 export function analyzeSolution(moves, options = {}) {
   const size = options.size === 2 ? 2 : 3;
@@ -336,6 +446,10 @@ export function analyzeSolution(moves, options = {}) {
     f2l: [],
     oll: null,
     pll: null,
+    firstBlock: null,
+    secondBlock: null,
+    cmll: null,
+    lse: null,
     allCrosses: {},
     unsupported,
   };
@@ -407,11 +521,80 @@ export function analyzeSolution(moves, options = {}) {
       return ai - bi;
     });
 
-  let chosen = ordered.find((c) => isCFOP(c.build)) ?? ordered[0];
-  const method = chosen && isCFOP(chosen.build) ? "CFOP" : "unknown";
-  const { color: crossColor, build } = chosen;
+  const cfopChosen = ordered.find((c) => isCFOP(c.build)) ?? ordered[0];
+  const cfopValid = !!cfopChosen && isCFOP(cfopChosen.build);
 
-  // Assemble timed records in solve order so durations chain correctly.
+  // Stage the solve as Roux (1st block -> 2nd block -> CMLL -> LSE) on every
+  // orientation. Each candidate fixes a side face and a perpendicular up face;
+  // buildForRoux assigns first/second block by which side finishes earliest.
+  // Pick the valid candidate whose first block completes earliest.
+  const mPerm = getMovePermutations(size)["M"].cw;
+  const rouxCandidates = [];
+  for (let s = 0; s < 6; s++) {
+    for (const u of geo.neighbors[s]) {
+      rouxCandidates.push(buildForRoux(snapshots, geo, s, u, mPerm));
+    }
+  }
+  const rouxBuild =
+    rouxCandidates
+      .filter((b) => isRoux(b))
+      .sort((a, b) => a.fbIdx - b.fbIdx)[0] ?? null;
+
+  // A solved cube satisfies many orderings, so both stagings can be technically
+  // valid. Disambiguate by which method's FIRST milestone is genuinely reached
+  // early: a real CFOP cross is built up front, whereas on a Roux solve no cross
+  // completes until LSE; conversely a full 1x2x3 block only forms mid-CFOP. The
+  // structure that actually happened owns the earlier first milestone; ties go
+  // to CFOP.
+  let method = "unknown";
+  if (cfopValid && rouxBuild) {
+    method = cfopChosen.build.crossIdx <= rouxBuild.fbIdx ? "CFOP" : "Roux";
+  } else if (cfopValid) {
+    method = "CFOP";
+  } else if (rouxBuild) {
+    method = "Roux";
+  }
+  const total = seq[n - 1].t;
+  const base = {
+    size,
+    method,
+    solved,
+    total,
+    tps: total > 0 ? simplifiedCount / (total / 1000) : 0,
+    moves: simplifiedMoves,
+    cross: null,
+    f2l: [],
+    oll: null,
+    pll: null,
+    firstBlock: null,
+    secondBlock: null,
+    cmll: null,
+    lse: null,
+    allCrosses,
+    unsupported,
+  };
+
+  // Roux: report 1st block / 2nd block / CMLL / LSE, chaining durations.
+  if (method === "Roux") {
+    const fbM = milestone(rouxBuild.fbIdx, 0);
+    const sbM = milestone(rouxBuild.sbIdx, fbM.at);
+    const cmllM = milestone(rouxBuild.cmllIdx, sbM.at);
+    const lseM = milestone(rouxBuild.lseIdx, cmllM.at);
+    return {
+      ...base,
+      firstBlock: fbM.record
+        ? { side: finalCenters[rouxBuild.firstSide], ...fbM.record }
+        : null,
+      secondBlock: sbM.record
+        ? { side: finalCenters[rouxBuild.secondSide], ...sbM.record }
+        : null,
+      cmll: cmllM.record,
+      lse: lseM.record,
+    };
+  }
+
+  // CFOP (or unknown): report cross / F2L / OLL / PLL from the earliest cross.
+  const { color: crossColor, build } = cfopChosen;
   const crossM = milestone(build.crossIdx, 0);
   const cross = crossM.record
     ? { color: crossColor, ...crossM.record }
@@ -428,25 +611,14 @@ export function analyzeSolution(moves, options = {}) {
   }
 
   const ollM = milestone(build.ollIdx, prevAt);
-  const oll = ollM.record;
   prevAt = ollM.at;
-
   const pllM = milestone(build.pllIdx, prevAt);
-  const pll = pllM.record;
 
-  const total = seq[n - 1].t;
   return {
-    size,
-    method,
-    solved,
-    total,
-    tps: total > 0 ? simplifiedCount / (total / 1000) : 0,
-    moves: simplifiedMoves,
+    ...base,
     cross,
     f2l,
-    oll,
-    pll,
-    allCrosses,
-    unsupported,
+    oll: ollM.record,
+    pll: pllM.record,
   };
 }
