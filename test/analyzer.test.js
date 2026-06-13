@@ -309,6 +309,17 @@ describe("analyzeSolution - Roux on real solves", () => {
     expect(out.cmll.moveIndex).toBeLessThan(out.lse.moveIndex);
   });
 
+  // Regression: each Roux stage must span enough moves to be a real stage, not a
+  // transient coincidence. The block/corner conditions flicker true at scattered
+  // instants throughout a solve; the old detection latched onto an early one and
+  // collapsed CMLL onto the second block (a 2-move "CMLL"), throwing off every
+  // downstream duration. Genuine stages are several moves long.
+  test.each(solves)("each Roux stage spans a plausible number of moves for %s", (_name, moves) => {
+    const out = analyzeSolution(moves);
+    expect(out.secondBlock.moveIndex - out.firstBlock.moveIndex).toBeGreaterThanOrEqual(5);
+    expect(out.cmll.moveIndex - out.secondBlock.moveIndex).toBeGreaterThanOrEqual(5);
+  });
+
   test.each(solves)("the two blocks are built on opposite faces for %s", (_name, moves) => {
     const out = analyzeSolution(moves);
     // Block side labels are the center colors; opposite faces never share one.
@@ -323,4 +334,28 @@ describe("analyzeSolution - Roux on real solves", () => {
     expect(out.cmll.duration).toBe(out.cmll.at - out.secondBlock.at);
     expect(out.lse.duration).toBe(out.lse.at - out.cmll.at);
   });
+
+  // Ground truth: the human solver watched these two replays move-by-move and
+  // reported where each stage finishes (move numbers below are their 1-indexed
+  // counts converted to 0-indexed moveIndex). These pin the detector to the
+  // actual solve, not just to a self-consistent ordering -- the earlier versions
+  // satisfied every ordering test above while still placing the second block and
+  // CMLL on the wrong moves. A few moves of slack absorbs the ambiguity of
+  // reading a stage boundary off a replay by eye.
+  const groundTruth = {
+    "roux-3": { firstBlock: 32, secondBlock: 84, cmll: 115, lse: 155 },
+    "roux-4": { secondBlock: 81, cmll: 97, lse: 141 },
+  };
+  test.each([["roux-3", roux3.replay.moves], ["roux-4", roux4.replay.moves]])(
+    "milestones match the human-validated replay for %s",
+    (name, moves) => {
+      const out = analyzeSolution(moves);
+      const truth = groundTruth[name];
+      const near = (got, want) => expect(Math.abs(got - want)).toBeLessThanOrEqual(8);
+      if (truth.firstBlock != null) near(out.firstBlock.moveIndex, truth.firstBlock);
+      near(out.secondBlock.moveIndex, truth.secondBlock);
+      near(out.cmll.moveIndex, truth.cmll);
+      expect(out.lse.moveIndex).toBe(truth.lse);
+    }
+  );
 });
