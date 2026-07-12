@@ -746,3 +746,27 @@ export { analyzeSolution, invertSequence } from "./analyzer.js";
 
 // Move-sequence simplifier (joins identical quarter turns into doubles).
 export { simplifyMoves } from "./simplify.js";
+
+// Reusable state predicates + derived geometry. These accept a CubeEngine, a
+// state() object, or a flat sticker array, and power goal detection in trainers
+// (last-layer orientation, F2L, cross, solved, ...) as well as the analyzer.
+export {
+  getCubeGeometry,
+  isLastLayerOriented,
+  areLastLayerCornersSolved,
+  isCrossComplete,
+  isF2LComplete,
+  isCubeSolved,
+  matchesGoal,
+  // Low-level flat-state helpers (advanced/introspection use).
+  buildGeometry,
+  flattenState,
+  centersOf,
+  slotCorrect,
+  isSolvedFlat,
+  crossDone,
+  f2lSlotStates,
+  ollDone,
+  faceUniform,
+  cornersSolvedOnFace,
+} from "./predicates.js";
