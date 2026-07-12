@@ -13,12 +13,17 @@
 
 import { CubeEngine, getMovePermutations } from "./index.js";
 import { simplifyMoves } from "./simplify.js";
-
-// Flat layout face order (must match CubeEngine.state()).
-const FACE_NAMES = ["UPPER", "LEFT", "FRONT", "RIGHT", "BACK", "DOWN"];
-
-// Basic face moves mapped to their face index in the flat sticker layout.
-const FACE_MOVE_TO_INDEX = { U: 0, L: 1, F: 2, R: 3, B: 4, D: 5 };
+import {
+  buildGeometry,
+  flattenState,
+  centersOf,
+  slotCorrect,
+  isSolvedFlat,
+  crossDone,
+  f2lSlotStates,
+  ollDone,
+  cornersSolvedOnFace,
+} from "./predicates.js";
 
 // Move bases the engine can actually apply (after normalization).
 const SUPPORTED_BASES = new Set([
@@ -41,93 +46,6 @@ function normalizeToken(raw) {
   return { token: base + m[2], base };
 }
 
-// Derived sticker geometry is identical for every cube of a given size.
-const GEOMETRY_CACHE = new Map();
-
-/**
- * Derives the sticker adjacency of a cube from the engine's permutation tables.
- *
- * A facelet is displaced by a face turn iff it physically belongs to that face,
- * so the SET of basic face turns that move a facelet identifies the cubie it
- * sits on: 1 face => center, 2 faces => edge, 3 faces => corner. Grouping
- * facelets by that signature reconstructs every edge/corner slot without any
- * hardcoded layout, and stays correct for any matrix convention the engine uses.
- */
-function buildGeometry(size) {
-  if (GEOMETRY_CACHE.has(size)) return GEOMETRY_CACHE.get(size);
-
-  const perms = getMovePermutations(size);
-  const per = size * size;
-  const total = per * 6;
-  const faceMoves = Object.keys(FACE_MOVE_TO_INDEX);
-
-  // signature[i] = sorted face indices whose quarter turn displaces sticker i.
-  const edgeMap = new Map(); // "a,b"   -> indices[]
-  const cornerMap = new Map(); // "a,b,c" -> indices[]
-  for (let i = 0; i < total; i++) {
-    const faces = [];
-    for (const mv of faceMoves) {
-      if (perms[mv].cw[i] !== i) faces.push(FACE_MOVE_TO_INDEX[mv]);
-    }
-    faces.sort((a, b) => a - b);
-    const key = faces.join(",");
-    if (faces.length === 2) {
-      if (!edgeMap.has(key)) edgeMap.set(key, []);
-      edgeMap.get(key).push(i);
-    } else if (faces.length === 3) {
-      if (!cornerMap.has(key)) cornerMap.set(key, []);
-      cornerMap.get(key).push(i);
-    }
-  }
-
-  const edges = [...edgeMap.entries()].map(([key, indices]) => ({
-    faces: key.split(",").map(Number),
-    indices,
-  }));
-  const corners = [...cornerMap.entries()].map(([key, indices]) => ({
-    faces: key.split(",").map(Number),
-    indices,
-  }));
-
-  // Neighbor / opposite relationships between the six face positions.
-  const neighbors = Array.from({ length: 6 }, () => new Set());
-  for (const e of edges) {
-    const [a, b] = e.faces;
-    neighbors[a].add(b);
-    neighbors[b].add(a);
-  }
-  const opposite = new Array(6).fill(-1);
-  for (let f = 0; f < 6; f++) {
-    for (let g = 0; g < 6; g++) {
-      if (g !== f && !neighbors[f].has(g)) {
-        opposite[f] = g;
-        break;
-      }
-    }
-  }
-
-  const geo = {
-    size,
-    per,
-    centerIndex: (f) => f * per + Math.floor(per / 2),
-    edges,
-    corners,
-    neighbors,
-    opposite,
-    edgesByFace: (f) => edges.filter((e) => e.faces.includes(f)),
-    cornersByFace: (f) => corners.filter((c) => c.faces.includes(f)),
-    edgeByPair: (a, b) =>
-      edges.find(
-        (e) =>
-          (e.faces[0] === a && e.faces[1] === b) ||
-          (e.faces[0] === b && e.faces[1] === a)
-      ),
-  };
-
-  GEOMETRY_CACHE.set(size, geo);
-  return geo;
-}
-
 /** Inverts a single move token (R -> R', R' -> R, R2 -> R2). */
 function invertToken(tok) {
   if (tok.endsWith("2")) return tok;
@@ -142,87 +60,6 @@ function invertToken(tok) {
  */
 export function invertSequence(tokens) {
   return tokens.slice().reverse().map(invertToken);
-}
-
-// Flattens CubeEngine.state() back into the flat sticker array layout.
-function flattenState(state) {
-  const out = [];
-  for (const name of FACE_NAMES) {
-    const matrix = state[name];
-    for (const row of matrix) {
-      for (const v of row) out.push(v);
-    }
-  }
-  return out;
-}
-
-// Center color currently shown on each face position.
-function centersOf(st, geo) {
-  const centers = new Array(6);
-  for (let f = 0; f < 6; f++) centers[f] = st[geo.centerIndex(f)];
-  return centers;
-}
-
-// A slot is correctly placed when every facelet matches its own face center.
-function slotCorrect(st, centers, indices, per) {
-  for (const x of indices) {
-    if (st[x] !== centers[Math.floor(x / per)]) return false;
-  }
-  return true;
-}
-
-// Whole cube solved: every face is a single (uniform) color.
-function isSolvedFlat(st, per) {
-  for (let f = 0; f < 6; f++) {
-    const base = f * per;
-    const c = st[base];
-    for (let i = 1; i < per; i++) if (st[base + i] !== c) return false;
-  }
-  return true;
-}
-
-// True when the cross of the given color is complete in this state.
-function crossDone(st, geo, color) {
-  const centers = centersOf(st, geo);
-  const C = centers.indexOf(color);
-  if (C < 0) return false;
-  return geo
-    .edgesByFace(C)
-    .every((e) => slotCorrect(st, centers, e.indices, geo.per));
-}
-
-// Per-slot F2L completion keyed by the (stable) pair of side-face colors.
-function f2lSlotStates(st, geo, color) {
-  const centers = centersOf(st, geo);
-  const C = centers.indexOf(color);
-  const result = {};
-  if (C < 0) return result;
-  for (const corner of geo.cornersByFace(C)) {
-    const sides = corner.faces.filter((f) => f !== C);
-    if (sides.length !== 2) continue;
-    const [a, b] = sides;
-    const edge = geo.edgeByPair(a, b);
-    const cornerOk = slotCorrect(st, centers, corner.indices, geo.per);
-    const edgeOk = edge
-      ? slotCorrect(st, centers, edge.indices, geo.per)
-      : false;
-    const key = [centers[a], centers[b]].sort().join("-");
-    result[key] = cornerOk && edgeOk;
-  }
-  return result;
-}
-
-// Last layer (face opposite the cross) fully oriented = one color on its top.
-function ollDone(st, geo, color) {
-  const centers = centersOf(st, geo);
-  const C = centers.indexOf(color);
-  if (C < 0) return false;
-  const O = geo.opposite[C];
-  const base = O * geo.per;
-  for (let i = 0; i < geo.per; i++) {
-    if (st[base + i] !== centers[O]) return false;
-  }
-  return true;
 }
 
 // --- Roux geometry --------------------------------------------------------
@@ -272,10 +109,7 @@ function applyPerm(st, perm) {
 // centers. As with the blocks, any fixed slice offset is applied by the caller
 // via pre-rotated snapshots, so this is a plain match against the centers.
 function cmllCornersDone(st, geo, upFace) {
-  const centers = centersOf(st, geo);
-  return geo
-    .cornersByFace(upFace)
-    .every((c) => slotCorrect(st, centers, c.indices, geo.per));
+  return cornersSolvedOnFace(st, geo, upFace);
 }
 
 // Index of the move that COMPLETES a stage: the first move after which the
