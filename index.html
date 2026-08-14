@@ -3,152 +3,277 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>cube-state-engine — Rubik's cube state tracking</title>
+    <meta
+      name="description"
+      content="A dependency-free JavaScript engine that tracks Rubik's cube state across every move, reports what's solved, and breaks a recorded solve into stages."
+    />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Martian+Mono:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
     <link href="styles.css" rel="stylesheet" />
-    <script
-      src="https://cdn.cubing.net/v0/js/cubing/twisty"
-      type="module"
-    ></script>
-    <title>Cube Engine Sample</title>
+    <script src="https://cdn.cubing.net/v0/js/cubing/twisty" type="module"></script>
   </head>
-  <body class="max-w-xl p-10 mx-auto font-serif">
-    <h1 class="text-2xl text-center font-bold">CUBE STATE ENGINE</h1>
-    <h2 class="mb-5 text-center">Bryan Lundberg</h2>
-    <p class="mb-10">
-      It's a core state manager that should be able to integrate with custom 3D
-      cube models, making it easy to track and update the cube's state after
-      every move, providing context information, such as when it's solved.
-    </p>
 
-    <h3 class="font-bold mb-5">Installation</h3>
-    <pre class="mb-5 text-xs bg-amber-50">
-
-  npm install cube-state-engine
-    </pre>
-
-    <h3 class="font-bold mb-5">Docs</h3>
-
-    <pre class="mb-5 text-xs bg-amber-50">
-
-  class CubeEngine {
-    constructor(initialScramble?: string): CubeEngine,
-    isSolved(): boolean,
-    getMoves(asString?: boolean): string | string[],
-    state(): {
-      UPPER: string[][];
-      LEFT: string[][];
-      FRONT: string[][];
-      RIGHT: string[][];
-      BACK: string[][];
-      DOWN: string[][];
-    },
-    reset(): void,
-    applyMoves(sequence: string, options?: { record?: boolean }): void,
-    rotateU(clockwise?: boolean): void,
-    rotateD(clockwise?: boolean): void,
-    rotateL(clockwise?: boolean): void,
-    rotateR(clockwise?: boolean): void,
-    rotateF(clockwise?: boolean): void,
-    rotateB(clockwise?: boolean): void,
-    rotateX(clockwise?: boolean): void,
-    rotateY(clockwise?: boolean): void,
-    rotateZ(clockwise?: boolean): void,
-    rotateDw(clockwise?: boolean): void,
-    rotateUw(clockwise?: boolean): void,
-    rotateRw(clockwise?: boolean): void,
-    rotateLw(clockwise?: boolean): void,
-    rotateM(clockwise?: boolean): void,
-  }
-
-</pre
-    >
-
-    <h3 class="font-bold mb-5">Sample usage</h3>
-    <p>
-      This example showcases a 3D visualization of a Rubik's Cube using the
-      Cubing.js library. You can easily swap it with any other visualization
-      method if preferred. The controls are configured to respond to keyboard
-      input, and a random interval movement has been implemented to demonstrate
-      the library in action.
-    </p>
-
-    <pre class="mt-5 text-[0.6rem] sm:text-xs text-wrap bg-amber-50">
-
-  const CE = window.CubeEngine;
-
-  const movesMap = {
-    f: { move: () => CE.rotateU(false) },
-    j: { move: () => CE.rotateU(true) },
-    g: { move: () => CE.rotateF(false) },
-    h: { move: () => CE.rotateF(true) },
-    o: { move: () => CE.rotateB(false) },
-    p: { move: () => CE.rotateB(true) },
-    i: { move: () => CE.rotateR(true) },
-    k: { move: () => CE.rotateR(false) },
-    d: { move: () => CE.rotateL(true) },
-    e: { move: () => CE.rotateL(false) },
-    t: { move: () => CE.rotateX(true) },
-    y: { move: () => CE.rotateX(true) },
-    b: { move: () => CE.rotateX(false) },
-    n: { move: () => CE.rotateX(false) },
-    ñ: { move: () => CE.rotateY(true) },
-    a: { move: () => CE.rotateY(false) },
-    s: { move: () => CE.rotateD(true) },
-    l: { move: () => CE.rotateD(false) },
-  };
-
-  setInterval(() => {
-    const keys = Object.keys(movesMap);
-    const randomKey = keys[Math.floor(Math.random() * keys.length)];
-    executeMove(randomKey);
-  }, 250);
-      </pre
-    >
-    <section
-      class="flex flex-col items-center justify-center gap-10 sm:flex-row mt-5"
-    >
-      <div class="flex-col">
-        <h2 class="mb-3 font-bold">3D</h2>
-        <twisty-player
-          style="width: 200px; height: 200px"
-          controlPanel="none"
-          back-view="top-right"
-        ></twisty-player>
+  <body>
+    <header class="masthead">
+      <div class="shell masthead__inner">
+        <span class="wordmark">cube<span>-state-</span>engine</span>
+        <nav class="masthead__links">
+          <a href="https://www.npmjs.com/package/cube-state-engine">npm</a>
+          <a href="https://github.com/bryanlundberg/cube-state-engine">GitHub</a>
+          <a href="https://github.com/bryanlundberg/NexusTimer">NexusTimer</a>
+        </nav>
       </div>
+    </header>
 
-      <div class="flex-col">
-        <h2 class="mb-3 font-bold">Memory</h2>
-        <div
-          class="w-[200px] h-[200px] flex justify-center items-center relative text-xs bg-amber-200"
-        >
-          <div class="absolute top-20 left-4" id="LEFT"></div>
-
-          <div class="absolute top-20 left-12 ms-1" id="FRONT"></div>
-
-          <div class="absolute top-20 left-24" id="RIGHT"></div>
-
-          <div class="absolute top-20 left-36" id="BACK"></div>
-
-          <div class="absolute top-6 left-12 ms-1" id="UPPER"></div>
-
-          <div class="absolute top-32 mt-1 ms-1 left-12" id="DOWN"></div>
+    <main>
+      <section class="shell hero">
+        <h1>A Rubik's cube, held in memory.</h1>
+        <p class="hero__lead">
+          Feed it moves and it tells you what the cube looks like, which stages
+          are solved, and how a recorded solve was actually put together.
+        </p>
+        <p class="facts">
+          <span><b>0</b> runtime dependencies</span>
+          <span><b>3x3</b> and <b>2x2</b></span>
+          <span>CJS + ESM + types</span>
+          <span>MIT</span>
+        </p>
+        <div class="install">
+          <code id="install-cmd">npm install cube-state-engine</code>
+          <button class="copy" id="copy-btn" type="button">Copy</button>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <section
-      class="w-full mt-5 text-start bg-amber-200 cursor-not-allowed select-none p-1"
-    >
-      <div class="font-black">
-        isSolved?: <span class="font-normal" id="is-solve">true</span>
-      </div>
-      <div class="font-black">
-        Moves: <span class="font-normal" id="total">0</span>
-      </div>
-      <div>
-        <span class="font-black">Historial: </span><span id="moves"></span>
-      </div>
-    </section>
+      <!-- ===================== live instrument ===================== -->
+      <section class="shell section">
+        <div class="section__head">
+          <h2>Turn the cube</h2>
+          <p class="prose">
+            The 3D view, the flat net and the checks below all read from one
+            <code>CubeEngine</code> instance. Press a key, or scramble it.
+          </p>
+        </div>
+
+        <div class="rig">
+          <div class="panel">
+            <div class="panel__bar">
+              <span class="label">3D view</span>
+              <span class="label">cubing.js</span>
+            </div>
+            <div class="viewport">
+              <twisty-player
+                control-panel="none"
+                back-view="top-right"
+                background="none"
+              ></twisty-player>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel__bar">
+              <span class="label">state()</span>
+              <span class="label" id="net-size">3 x 3</span>
+            </div>
+            <div class="panel__body">
+              <div class="net" id="net"></div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel__bar"><span class="label">Readout</span></div>
+            <div class="panel__body">
+              <div class="readout">
+                <div class="readout__row">
+                  <span class="label">isSolved()</span>
+                  <span
+                    class="readout__val"
+                    id="is-solved"
+                    data-state="true"
+                    aria-live="polite"
+                    >true</span
+                  >
+                </div>
+                <div class="readout__row">
+                  <span class="label">Moves recorded</span>
+                  <span class="readout__val" id="move-count">0</span>
+                </div>
+                <div class="readout__row">
+                  <span class="label">simplifyMoves()</span>
+                  <span class="readout__val" id="simplified-count">0</span>
+                </div>
+                <div class="readout__row">
+                  <p class="history" id="history"></p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel__bar">
+              <span class="label">Predicates</span>
+              <span class="label">live</span>
+            </div>
+            <div class="panel__body">
+              <ul class="lamps" id="lamps"></ul>
+            </div>
+          </div>
+
+          <div class="panel rig__wide">
+            <div class="panel__bar">
+              <span class="label">Controls</span>
+              <div class="controls">
+                <button class="btn" id="scramble-btn" type="button">Scramble</button>
+                <button class="btn" id="reset-btn" type="button">Reset cube</button>
+                <button
+                  class="btn"
+                  id="auto-btn"
+                  type="button"
+                  aria-pressed="false"
+                >
+                  Auto-turn
+                </button>
+              </div>
+            </div>
+            <div class="panel__body">
+              <p class="label" style="margin-bottom: 0.75rem">Keyboard</p>
+              <div class="keys" id="keys"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== analyzer ===================== -->
+      <section class="shell section">
+        <div class="section__head">
+          <h2>Break a solve into stages</h2>
+          <p class="prose">
+            Hand <code>analyzeSolution()</code> a timed move list and it replays
+            the solve, works out which method was used, and reports when each
+            stage finished. This is a real recorded solve from the test suite.
+          </p>
+        </div>
+        <div class="panel">
+          <div class="panel__bar">
+            <span class="label" id="analysis-src">test/cfop-1.json</span>
+            <span class="label" id="analysis-method">analyzing…</span>
+          </div>
+          <div class="panel__body analysis" id="analysis"></div>
+        </div>
+      </section>
+
+      <!-- ===================== api ===================== -->
+      <section class="shell section">
+        <div class="section__head">
+          <h2>The API</h2>
+          <p class="prose">
+            Everything is a named export. Predicates accept a
+            <code>CubeEngine</code>, a <code>state()</code> object, or a flat
+            sticker array.
+          </p>
+        </div>
+
+        <div class="api">
+          <div class="api__group">
+            <h3>Engine</h3>
+            <ul>
+              <li>
+                <b>new CubeEngine(scramble?, { size })</b>
+                <em>Size 2 or 3. The scramble is applied but not recorded.</em>
+              </li>
+              <li>
+                <b>applyMoves(seq, { record })</b>
+                <em>U D L R F B, wide Uw Dw Lw Rw Fw, slices M E S, rotations x y z, with ' and 2.</em>
+              </li>
+              <li><b>state()</b><em>Six faces as color matrices.</em></li>
+              <li><b>isSolved()</b><em>Every face a single color.</em></li>
+              <li><b>getMoves(asString?)</b><em>Move history.</em></li>
+              <li><b>reset()</b><em>Back to solved, history cleared.</em></li>
+              <li>
+                <b>rotateU / D / L / R / F / B</b>
+                <em>Plus Uw Dw Lw Rw Fw, M E S, and X Y Z. Each takes a clockwise flag.</em>
+              </li>
+            </ul>
+          </div>
+
+          <div class="api__group">
+            <h3>Predicates</h3>
+            <ul>
+              <li><b>isCubeSolved(cube)</b></li>
+              <li><b>isCrossComplete(cube, { color })</b></li>
+              <li><b>isF2LComplete(cube, { cross })</b></li>
+              <li><b>isLastLayerOriented(cube, { face })</b></li>
+              <li><b>areLastLayerCornersSolved(cube, { face })</b></li>
+              <li>
+                <b>matchesGoal(cube, goal)</b>
+                <em>full · cross · f2l · oll · oll+cp, or your own function.</em>
+              </li>
+              <li>
+                <b>getCubeGeometry(size)</b>
+                <em>Derived edges, corners, neighbors and opposites.</em>
+              </li>
+            </ul>
+          </div>
+
+          <div class="api__group">
+            <h3>Analysis</h3>
+            <ul>
+              <li>
+                <b>analyzeSolution(moves, { size })</b>
+                <em>Detects CFOP and Roux. Reports per-stage timing and TPS.</em>
+              </li>
+              <li>
+                <b>simplifyMoves(moves)</b>
+                <em>Joins identical quarter turns into doubles. Never cancels.</em>
+              </li>
+              <li>
+                <b>invertSequence(tokens)</b>
+                <em>Reverses and inverts a move list.</em>
+              </li>
+              <li>
+                <b>getMovePermutations(size)</b>
+                <em>The cached permutation tables the engine runs on.</em>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <pre class="code" style="margin-top: var(--gap)"><i>// How this page is wired</i>
+<u>import</u> { CubeEngine, matchesGoal, simplifyMoves } <u>from</u> <b>"cube-state-engine"</b>;
+
+<u>const</u> cube = <u>new</u> CubeEngine();
+
+<u>function</u> onKey(move) {
+  cube.applyMoves(move, { record: <b>true</b> });
+
+  paintNet(cube.state());
+  player.alg = cube.getMoves();
+  solvedEl.textContent = cube.isSolved();
+  crossLamp.dataset.on = matchesGoal(cube, <b>"cross"</b>);
+  countEl.textContent = simplifyMoves(cube.getMoves(<b>false</b>)).length;
+}</pre>
+      </section>
+    </main>
+
+    <footer class="shell footer">
+      <p>
+        Built by
+        <a href="https://github.com/bryanlundberg">Bryan Lundberg</a>. Powers the
+        solve tracking in
+        <a href="https://github.com/bryanlundberg/NexusTimer">NexusTimer</a>.
+      </p>
+      <nav>
+        <a href="https://www.npmjs.com/package/cube-state-engine">npm</a>
+        <a href="https://github.com/bryanlundberg/cube-state-engine">Source</a>
+        <a href="https://github.com/bryanlundberg/cube-state-engine/blob/main/LICENSE">MIT</a>
+      </nav>
+    </footer>
+
     <script src="main.js" type="module"></script>
   </body>
 </html>
