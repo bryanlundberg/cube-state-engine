@@ -193,15 +193,13 @@ const result = analyzeSolution([
     { slot: "G-R", at: 9871, duration: 1411, moveIndex: 48, move: "F'" }
   ],
   oll: { at: 12540, duration: 2669, moveIndex: 63, move: "R'" },
-  pll: { at: 14160, duration: 1620, moveIndex: 80, move: "R'" },
-  auf: { at: 14371, duration:  211, moveIndex: 81, move: "D'" }
+  pll: { at: 14371, duration: 1831, moveIndex: 81, move: "D'" }
 }
 ```
 
 - **Detects CFOP and Roux automatically.** Roux solves come back with `firstBlock`, `secondBlock`, `cmll` and `lse` instead (each block noting the `side` color it was built on). When neither staging fits, `method` is `"unknown"` and the timing fields are `null`.
 - **`allCrosses`** reports when the cross completed on *every* face color, not just the one you used.
 - **`unsupported`** lists any move tokens it couldn't parse, so bad timings never pass silently.
-- **AUF is split out** from PLL the final alignment turns are counted separately.
 
 Also exported: `invertSequence(tokens)`, which reverses and inverts a move list.
 
