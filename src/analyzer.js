@@ -23,7 +23,17 @@ import {
   f2lSlotStates,
   ollDone,
   cornersSolvedOnFace,
+  FACE_MOVE_TO_INDEX,
 } from "./predicates.js";
+
+// Face letter for each face position in the flat layout (0=U 1=L 2=F 3=R 4=B 5=D).
+const FACE_LETTERS = Object.entries(FACE_MOVE_TO_INDEX).reduce(
+  (acc, [letter, index]) => {
+    acc[index] = letter;
+    return acc;
+  },
+  new Array(6)
+);
 
 // Move bases the engine can actually apply (after normalization).
 const SUPPORTED_BASES = new Set([
@@ -265,6 +275,9 @@ function isRoux(build) {
  *   carries `cross`, `f2l[]`, `oll`, `pll`; for Roux it carries `firstBlock`,
  *   `secondBlock`, `cmll`, `lse` (the other method's fields are null). Each
  *   block record also includes the `side` center color it was built on.
+ *   `startFace` names the face the solve was started from, whatever the method:
+ *   `{ face, color }` with `face` one of U/L/F/R/B/D and `color` that face's
+ *   center color at the end of the solve.
  */
 export function analyzeSolution(moves, options = {}) {
   const size = options.size === 2 ? 2 : 3;
@@ -304,6 +317,7 @@ export function analyzeSolution(moves, options = {}) {
     secondBlock: null,
     cmll: null,
     lse: null,
+    startFace: null,
     allCrosses: {},
     unsupported,
   };
@@ -464,9 +478,20 @@ export function analyzeSolution(moves, options = {}) {
     secondBlock: null,
     cmll: null,
     lse: null,
+    startFace: null,
     allCrosses,
     unsupported,
   };
+
+  // The face the solve was started from, expressed the same way for every
+  // method: the cross face for CFOP, the first block's side face for Roux. It is
+  // read off the FINAL orientation (rotations during the solve do not change
+  // which face that color ends up on), so `face` is always one of U/L/F/R/B/D
+  // and `color` is that face's center color.
+  const startFaceOf = (faceIdx) =>
+    faceIdx == null || faceIdx < 0
+      ? null
+      : { face: FACE_LETTERS[faceIdx], color: finalCenters[faceIdx] };
 
   // Roux: report 1st block / 2nd block / CMLL / LSE, chaining durations.
   if (method === "Roux") {
@@ -484,6 +509,7 @@ export function analyzeSolution(moves, options = {}) {
         : null,
       cmll: cmllM.record,
       lse: lseM.record,
+      startFace: fbM.record ? startFaceOf(rouxBuild.firstSide) : null,
     };
   }
 
@@ -514,5 +540,6 @@ export function analyzeSolution(moves, options = {}) {
     f2l,
     oll: ollM.record,
     pll: pllM.record,
+    startFace: cross ? startFaceOf(finalCenters.indexOf(crossColor)) : null,
   };
 }

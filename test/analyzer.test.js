@@ -1,4 +1,11 @@
-import { CubeEngine, analyzeSolution, invertSequence } from "../src/index.js";
+import {
+  CubeEngine,
+  analyzeSolution,
+  invertSequence,
+  centersOf,
+  flattenState,
+  getCubeGeometry,
+} from "../src/index.js";
 import cfop1 from "./cfop-1.json";
 import cfop2 from "./cfop-2.json";
 import roux1 from "./roux-1.json";
@@ -358,4 +365,59 @@ describe("analyzeSolution - Roux on real solves", () => {
       expect(out.lse.moveIndex).toBe(truth.lse);
     }
   );
+});
+
+describe("analyzeSolution - startFace", () => {
+  // The face the solve was started from, reported the same way whatever the
+  // method: the cross face for CFOP, the first block's face for Roux.
+  const cfopSolves = [
+    ["cfop-1", cfop1.replay.moves],
+    ["cfop-2", cfop2.replay.moves],
+  ];
+  const rouxSolves = [
+    ["roux-1", roux1.replay.moves],
+    ["roux-2", roux2.replay.moves],
+    ["roux-3", roux3.replay.moves],
+    ["roux-4", roux4.replay.moves],
+  ];
+
+  test("is null when there is no solve to stage", () => {
+    expect(analyzeSolution([]).startFace).toBeNull();
+  });
+
+  test.each([...cfopSolves, ...rouxSolves])(
+    "names one of the six faces plus its color for %s",
+    (_name, moves) => {
+      const out = analyzeSolution(moves);
+      expect(out.startFace).not.toBeNull();
+      expect(["U", "L", "F", "R", "B", "D"]).toContain(out.startFace.face);
+      expect(["W", "O", "G", "R", "B", "Y"]).toContain(out.startFace.color);
+    }
+  );
+
+  test.each([...cfopSolves, ...rouxSolves])(
+    "the face letter carries that color at the end of %s",
+    (_name, moves) => {
+      const out = analyzeSolution(moves);
+      // Replay scramble + solution independently and read the final centers:
+      // the reported letter must be the face actually showing that color.
+      const tokens = moves.map((x) => x.m);
+      const cube = new CubeEngine();
+      cube.applyMoves(invertSequence(tokens).join(" "), { record: false });
+      cube.applyMoves(tokens.join(" "), { record: false });
+      const centers = centersOf(flattenState(cube.state()), getCubeGeometry(3));
+      const faceIndex = { U: 0, L: 1, F: 2, R: 3, B: 4, D: 5 }[out.startFace.face];
+      expect(centers[faceIndex]).toBe(out.startFace.color);
+    }
+  );
+
+  test.each(cfopSolves)("matches the cross face color on %s", (_name, moves) => {
+    const out = analyzeSolution(moves);
+    expect(out.startFace.color).toBe(out.cross.color);
+  });
+
+  test.each(rouxSolves)("matches the first block side on %s", (_name, moves) => {
+    const out = analyzeSolution(moves);
+    expect(out.startFace.color).toBe(out.firstBlock.side);
+  });
 });
