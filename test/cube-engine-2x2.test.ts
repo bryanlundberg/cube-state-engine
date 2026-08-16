@@ -1,3 +1,5 @@
+import { describe, expect, test } from "bun:test";
+
 import { CubeEngine, COLOR } from "../src/index.js";
 
 describe("2x2 Cube Tests", () => {

@@ -1,3 +1,7 @@
+import { describe, expect, test } from "bun:test";
+
+import type { StageRecord, TimedMove } from "../src/index.js";
+
 import {
   CubeEngine,
   analyzeSolution,
@@ -15,7 +19,7 @@ import roux4 from "./roux-4.json";
 
 // Builds a `[{ m, t }]` solution from a token array, assigning each move a
 // cumulative timestamp (200ms per move by default).
-function timed(tokens, step = 200) {
+function timed(tokens: string[], step: number = 200): TimedMove[] {
   return tokens.map((m, i) => ({ m, t: (i + 1) * step }));
 }
 
@@ -51,8 +55,8 @@ describe("analyzeSolution - basics", () => {
     const finalStage = out.pll ?? out.lse;
     expect(out.solved).toBe(true);
     expect(finalStage).not.toBeNull();
-    expect(finalStage.moveIndex).toBe(solution.length - 1);
-    expect(finalStage.at).toBe(out.total);
+    expect(finalStage!.moveIndex).toBe(solution.length - 1);
+    expect(finalStage!.at).toBe(out.total);
   });
 
   test("every face cross is complete by the end of a solving sequence", () => {
@@ -65,8 +69,8 @@ describe("analyzeSolution - basics", () => {
     expect(colors.length).toBe(6);
     for (const color of colors) {
       expect(out.allCrosses[color]).not.toBeNull();
-      expect(out.allCrosses[color].moveIndex).toBeLessThanOrEqual(
-        finalStage.moveIndex
+      expect(out.allCrosses[color]!.moveIndex).toBeLessThanOrEqual(
+        finalStage!.moveIndex
       );
     }
   });
@@ -77,10 +81,10 @@ describe("analyzeSolution - basics", () => {
     const out = analyzeSolution(timed(solution));
 
     if (out.cross) {
-      expect(out.cross.moveIndex).toBeLessThanOrEqual(out.pll.moveIndex);
+      expect(out.cross!.moveIndex).toBeLessThanOrEqual(out.pll!.moveIndex);
     }
     for (const pair of out.f2l) {
-      expect(pair.moveIndex).toBeLessThanOrEqual(out.pll.moveIndex);
+      expect(pair.moveIndex).toBeLessThanOrEqual(out.pll!.moveIndex);
     }
   });
 });
@@ -123,32 +127,32 @@ describe("analyzeSolution - staged CFOP solve", () => {
     expect(out.pll).not.toBeNull();
 
     // Strictly non-decreasing completion indices: cross <= f2l* <= oll <= pll.
-    expect(out.cross.moveIndex).toBeLessThanOrEqual(out.f2l[0].moveIndex);
+    expect(out.cross!.moveIndex).toBeLessThanOrEqual(out.f2l[0].moveIndex);
     for (let i = 1; i < out.f2l.length; i++) {
       expect(out.f2l[i - 1].moveIndex).toBeLessThanOrEqual(out.f2l[i].moveIndex);
     }
-    expect(out.f2l[3].moveIndex).toBeLessThanOrEqual(out.oll.moveIndex);
-    expect(out.oll.moveIndex).toBeLessThanOrEqual(out.pll.moveIndex);
+    expect(out.f2l[3].moveIndex).toBeLessThanOrEqual(out.oll!.moveIndex);
+    expect(out.oll!.moveIndex).toBeLessThanOrEqual(out.pll!.moveIndex);
   });
 
   test("stage durations are consistent with cumulative timestamps", () => {
     const out = analyzeSolution(timed(solution, 150));
     // Each stage duration equals its `at` minus the previous stage's `at`.
-    expect(out.cross.duration).toBe(out.cross.at);
-    let prev = out.cross.at;
+    expect(out.cross!.duration).toBe(out.cross!.at);
+    let prev = out.cross!.at;
     for (const pair of out.f2l) {
       expect(pair.duration).toBe(pair.at - prev);
       prev = pair.at;
     }
-    expect(out.oll.duration).toBe(out.oll.at - prev);
-    expect(out.pll.duration).toBe(out.pll.at - out.oll.at);
+    expect(out.oll!.duration).toBe(out.oll!.at - prev);
+    expect(out.pll!.duration).toBe(out.pll!.at - out.oll!.at);
   });
 
   test("timestamps map straight through (t is cumulative)", () => {
     const moves = timed(invertSequence("R U F".split(" ")), 500);
     const out = analyzeSolution(moves);
     expect(out.total).toBe(moves[moves.length - 1].t);
-    expect((out.pll ?? out.lse).at).toBe(out.total);
+    expect((out.pll ?? out.lse)!.at).toBe(out.total);
   });
 });
 
@@ -197,7 +201,7 @@ describe("geometry derivation", () => {
 describe("analyzeSolution - method discrimination on real solves", () => {
   // The two methods must never be confused: CFOP solves report CFOP, Roux
   // solves report Roux, each with only its own milestone fields populated.
-  const cases = [
+  const cases: Array<[string, string, TimedMove[]]> = [
     ["cfop-1", "CFOP", cfop1.replay.moves],
     ["cfop-2", "CFOP", cfop2.replay.moves],
     ["roux-1", "Roux", roux1.replay.moves],
@@ -225,7 +229,7 @@ describe("analyzeSolution - method discrimination on real solves", () => {
 
 describe("analyzeSolution - CFOP on real solves", () => {
   // Two genuine human CFOP solves recorded move-by-move with cumulative times.
-  const solves = [
+  const solves: Array<[string, TimedMove[]]> = [
     ["cfop-1", cfop1.replay.moves],
     ["cfop-2", cfop2.replay.moves],
   ];
@@ -244,15 +248,15 @@ describe("analyzeSolution - CFOP on real solves", () => {
     expect(out.pll).not.toBeNull();
 
     // Non-decreasing completion indices: cross <= f2l* <= oll <= pll.
-    expect(out.cross.moveIndex).toBeLessThanOrEqual(out.f2l[0].moveIndex);
+    expect(out.cross!.moveIndex).toBeLessThanOrEqual(out.f2l[0].moveIndex);
     for (let i = 1; i < out.f2l.length; i++) {
       expect(out.f2l[i - 1].moveIndex).toBeLessThanOrEqual(out.f2l[i].moveIndex);
     }
-    expect(out.f2l[3].moveIndex).toBeLessThanOrEqual(out.oll.moveIndex);
-    expect(out.oll.moveIndex).toBeLessThanOrEqual(out.pll.moveIndex);
+    expect(out.f2l[3].moveIndex).toBeLessThanOrEqual(out.oll!.moveIndex);
+    expect(out.oll!.moveIndex).toBeLessThanOrEqual(out.pll!.moveIndex);
 
     // PLL is the final solved state, at the last recorded move.
-    expect(out.pll.at).toBe(out.total);
+    expect(out.pll!.at).toBe(out.total);
   });
 
   test.each(solves)("leaves Roux fields empty for %s", (_name, moves) => {
@@ -266,7 +270,7 @@ describe("analyzeSolution - CFOP on real solves", () => {
 
 describe("analyzeSolution - Roux on real solves", () => {
   // Two genuine human Roux solves recorded move-by-move with cumulative times.
-  const solves = [
+  const solves: Array<[string, TimedMove[]]> = [
     ["roux-1", roux1.replay.moves],
     ["roux-2", roux2.replay.moves],
     ["roux-3", roux3.replay.moves],
@@ -287,12 +291,12 @@ describe("analyzeSolution - Roux on real solves", () => {
     expect(out.lse).not.toBeNull();
 
     // Non-decreasing completion indices: 1st block <= 2nd block <= CMLL <= LSE.
-    expect(out.firstBlock.moveIndex).toBeLessThanOrEqual(out.secondBlock.moveIndex);
-    expect(out.secondBlock.moveIndex).toBeLessThanOrEqual(out.cmll.moveIndex);
-    expect(out.cmll.moveIndex).toBeLessThanOrEqual(out.lse.moveIndex);
+    expect(out.firstBlock!.moveIndex).toBeLessThanOrEqual(out.secondBlock!.moveIndex);
+    expect(out.secondBlock!.moveIndex).toBeLessThanOrEqual(out.cmll!.moveIndex);
+    expect(out.cmll!.moveIndex).toBeLessThanOrEqual(out.lse!.moveIndex);
 
     // LSE is the final solved state, at the last recorded move.
-    expect(out.lse.at).toBe(out.total);
+    expect(out.lse!.at).toBe(out.total);
   });
 
   test.each(solves)("leaves CFOP fields empty for %s", (_name, moves) => {
@@ -311,9 +315,9 @@ describe("analyzeSolution - Roux on real solves", () => {
   // solve finishes on a strictly later move than the one before it.
   test.each(solves)("each Roux stage completes on a strictly later move for %s", (_name, moves) => {
     const out = analyzeSolution(moves);
-    expect(out.firstBlock.moveIndex).toBeLessThan(out.secondBlock.moveIndex);
-    expect(out.secondBlock.moveIndex).toBeLessThan(out.cmll.moveIndex);
-    expect(out.cmll.moveIndex).toBeLessThan(out.lse.moveIndex);
+    expect(out.firstBlock!.moveIndex).toBeLessThan(out.secondBlock!.moveIndex);
+    expect(out.secondBlock!.moveIndex).toBeLessThan(out.cmll!.moveIndex);
+    expect(out.cmll!.moveIndex).toBeLessThan(out.lse!.moveIndex);
   });
 
   // Regression: each Roux stage must span enough moves to be a real stage, not a
@@ -323,23 +327,23 @@ describe("analyzeSolution - Roux on real solves", () => {
   // downstream duration. Genuine stages are several moves long.
   test.each(solves)("each Roux stage spans a plausible number of moves for %s", (_name, moves) => {
     const out = analyzeSolution(moves);
-    expect(out.secondBlock.moveIndex - out.firstBlock.moveIndex).toBeGreaterThanOrEqual(5);
-    expect(out.cmll.moveIndex - out.secondBlock.moveIndex).toBeGreaterThanOrEqual(5);
+    expect(out.secondBlock!.moveIndex - out.firstBlock!.moveIndex).toBeGreaterThanOrEqual(5);
+    expect(out.cmll!.moveIndex - out.secondBlock!.moveIndex).toBeGreaterThanOrEqual(5);
   });
 
   test.each(solves)("the two blocks are built on opposite faces for %s", (_name, moves) => {
     const out = analyzeSolution(moves);
     // Block side labels are the center colors; opposite faces never share one.
-    expect(out.firstBlock.side).not.toBe(out.secondBlock.side);
-    expect(typeof out.firstBlock.side).toBe("string");
+    expect(out.firstBlock!.side).not.toBe(out.secondBlock!.side);
+    expect(typeof out.firstBlock!.side).toBe("string");
   });
 
   test.each(solves)("stage durations chain from the previous milestone for %s", (_name, moves) => {
     const out = analyzeSolution(moves);
-    expect(out.firstBlock.duration).toBe(out.firstBlock.at);
-    expect(out.secondBlock.duration).toBe(out.secondBlock.at - out.firstBlock.at);
-    expect(out.cmll.duration).toBe(out.cmll.at - out.secondBlock.at);
-    expect(out.lse.duration).toBe(out.lse.at - out.cmll.at);
+    expect(out.firstBlock!.duration).toBe(out.firstBlock!.at);
+    expect(out.secondBlock!.duration).toBe(out.secondBlock!.at - out.firstBlock!.at);
+    expect(out.cmll!.duration).toBe(out.cmll!.at - out.secondBlock!.at);
+    expect(out.lse!.duration).toBe(out.lse!.at - out.cmll!.at);
   });
 
   // Ground truth: the human solver watched these two replays move-by-move and
@@ -349,20 +353,26 @@ describe("analyzeSolution - Roux on real solves", () => {
   // satisfied every ordering test above while still placing the second block and
   // CMLL on the wrong moves. A few moves of slack absorbs the ambiguity of
   // reading a stage boundary off a replay by eye.
-  const groundTruth = {
+  const groundTruth: Record<
+    string,
+    { firstBlock?: number; secondBlock: number; cmll: number; lse: number }
+  > = {
     "roux-3": { firstBlock: 32, secondBlock: 84, cmll: 115, lse: 155 },
     "roux-4": { secondBlock: 81, cmll: 97, lse: 141 },
   };
-  test.each([["roux-3", roux3.replay.moves], ["roux-4", roux4.replay.moves]])(
+  test.each<[string, TimedMove[]]>([
+    ["roux-3", roux3.replay.moves],
+    ["roux-4", roux4.replay.moves],
+  ])(
     "milestones match the human-validated replay for %s",
     (name, moves) => {
       const out = analyzeSolution(moves);
       const truth = groundTruth[name];
-      const near = (got, want) => expect(Math.abs(got - want)).toBeLessThanOrEqual(8);
-      if (truth.firstBlock != null) near(out.firstBlock.moveIndex, truth.firstBlock);
-      near(out.secondBlock.moveIndex, truth.secondBlock);
-      near(out.cmll.moveIndex, truth.cmll);
-      expect(out.lse.moveIndex).toBe(truth.lse);
+      const near = (got: number, want: number) => expect(Math.abs(got - want)).toBeLessThanOrEqual(8);
+      if (truth.firstBlock != null) near(out.firstBlock!.moveIndex, truth.firstBlock);
+      near(out.secondBlock!.moveIndex, truth.secondBlock);
+      near(out.cmll!.moveIndex, truth.cmll);
+      expect(out.lse!.moveIndex).toBe(truth.lse);
     }
   );
 });
@@ -370,11 +380,11 @@ describe("analyzeSolution - Roux on real solves", () => {
 describe("analyzeSolution - startFace", () => {
   // The face the solve was started from, reported the same way whatever the
   // method: the cross face for CFOP, the first block's face for Roux.
-  const cfopSolves = [
+  const cfopSolves: Array<[string, TimedMove[]]> = [
     ["cfop-1", cfop1.replay.moves],
     ["cfop-2", cfop2.replay.moves],
   ];
-  const rouxSolves = [
+  const rouxSolves: Array<[string, TimedMove[]]> = [
     ["roux-1", roux1.replay.moves],
     ["roux-2", roux2.replay.moves],
     ["roux-3", roux3.replay.moves],
@@ -390,8 +400,8 @@ describe("analyzeSolution - startFace", () => {
     (_name, moves) => {
       const out = analyzeSolution(moves);
       expect(out.startFace).not.toBeNull();
-      expect(["U", "L", "F", "R", "B", "D"]).toContain(out.startFace.face);
-      expect(["W", "O", "G", "R", "B", "Y"]).toContain(out.startFace.color);
+      expect(["U", "L", "F", "R", "B", "D"]).toContain(out.startFace!.face);
+      expect(["W", "O", "G", "R", "B", "Y"]).toContain(out.startFace!.color);
     }
   );
 
@@ -406,18 +416,105 @@ describe("analyzeSolution - startFace", () => {
       cube.applyMoves(invertSequence(tokens).join(" "), { record: false });
       cube.applyMoves(tokens.join(" "), { record: false });
       const centers = centersOf(flattenState(cube.state()), getCubeGeometry(3));
-      const faceIndex = { U: 0, L: 1, F: 2, R: 3, B: 4, D: 5 }[out.startFace.face];
-      expect(centers[faceIndex]).toBe(out.startFace.color);
+      const faceIndex = { U: 0, L: 1, F: 2, R: 3, B: 4, D: 5 }[out.startFace!.face];
+      expect(centers[faceIndex]).toBe(out.startFace!.color);
     }
   );
 
   test.each(cfopSolves)("matches the cross face color on %s", (_name, moves) => {
     const out = analyzeSolution(moves);
-    expect(out.startFace.color).toBe(out.cross.color);
+    expect(out.startFace!.color).toBe(out.cross!.color);
   });
 
   test.each(rouxSolves)("matches the first block side on %s", (_name, moves) => {
     const out = analyzeSolution(moves);
-    expect(out.startFace.color).toBe(out.firstBlock.side);
+    expect(out.startFace!.color).toBe(out.firstBlock!.side);
+  });
+});
+
+describe("analyzeSolution - stages", () => {
+  // `stages[]` is the method-agnostic breakdown; the flat per-method fields are
+  // a projection of it kept for backwards compatibility.
+  const solves: Array<[string, TimedMove[]]> = [
+    ["cfop-1", cfop1.replay.moves],
+    ["cfop-2", cfop2.replay.moves],
+    ["roux-1", roux1.replay.moves],
+    ["roux-2", roux2.replay.moves],
+    ["roux-3", roux3.replay.moves],
+    ["roux-4", roux4.replay.moves],
+  ];
+
+  test("is empty when there is no solve to stage", () => {
+    expect(analyzeSolution([]).stages).toEqual([]);
+  });
+
+  test.each(solves)("stages run chronologically and chain durations for %s", (_name, moves) => {
+    const out = analyzeSolution(moves);
+    expect(out.stages.length).toBeGreaterThan(0);
+
+    let prevAt = 0;
+    let prevIdx = -1;
+    for (const stage of out.stages) {
+      expect(stage.moveIndex).toBeGreaterThan(prevIdx);
+      expect(stage.at).toBe(stage.duration + prevAt);
+      expect(stage.duration).toBe(stage.at - prevAt);
+      expect(typeof stage.label).toBe("string");
+      prevAt = stage.at;
+      prevIdx = stage.moveIndex;
+    }
+  });
+
+  test.each(solves)("every stage projects onto its legacy field for %s", (_name, moves) => {
+    const out = analyzeSolution(moves);
+    // Stage keys ARE the legacy field names (cross/f2l/oll/pll for CFOP,
+    // firstBlock/secondBlock/cmll/lse for Roux), so the projection is checked
+    // the same way whatever the method reported.
+    const pairs = [...out.f2l];
+    for (const stage of out.stages) {
+      const byField = out as unknown as Record<string, StageRecord | null>;
+      const legacy = stage.key === "f2l" ? pairs.shift() : byField[stage.key];
+      expect(legacy).not.toBeNull();
+      expect(legacy!.at).toBe(stage.at);
+      expect(legacy!.duration).toBe(stage.duration);
+      expect(legacy!.moveIndex).toBe(stage.moveIndex);
+      expect(legacy!.move).toBe(stage.move);
+    }
+    expect(pairs).toHaveLength(0);
+  });
+
+  test("carries the cross color and F2L slot in meta on a CFOP solve", () => {
+    const out = analyzeSolution(cfop1.replay.moves);
+    const cross = out.stages.find((s) => s.key === "cross");
+    expect(cross!.meta.color).toBe(out.cross!.color);
+    expect(out.stages.filter((s) => s.key === "f2l").map((s) => s.meta.slot)).toEqual(
+      out.f2l.map((p) => p.slot)
+    );
+  });
+
+  test("carries the block side in meta on a Roux solve", () => {
+    const out = analyzeSolution(roux1.replay.moves);
+    const first = out.stages.find((s) => s.key === "firstBlock");
+    const second = out.stages.find((s) => s.key === "secondBlock");
+    expect(first!.meta.side).toBe(out.firstBlock!.side);
+    expect(second!.meta.side).toBe(out.secondBlock!.side);
+  });
+});
+
+describe("analyzeSolution - non-3x3", () => {
+  test("a 2x2 solve reports only the solved milestone", () => {
+    const solution = invertSequence("R U F' U2 R'".split(" "));
+    const out = analyzeSolution(timed(solution), { size: 2 });
+
+    expect(out.size).toBe(2);
+    expect(out.solved).toBe(true);
+    expect(out.method).toBe("unknown");
+    expect(out.stages.map((s) => s.key)).toEqual(["pll"]);
+    expect(out.pll!.at).toBe(out.total);
+    expect(out.pll!.duration).toBe(out.total);
+    // No 3x3 staging is attempted, so nothing else is reported.
+    expect(out.cross).toBeNull();
+    expect(out.f2l).toEqual([]);
+    expect(out.startFace).toBeNull();
+    expect(out.allCrosses).toEqual({});
   });
 });

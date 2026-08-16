@@ -1,3 +1,5 @@
+import { expect, test } from "bun:test";
+
 import { CubeEngine, COLOR } from "../src/index.js";
 
 test("spawn a cube", () => {
@@ -984,4 +986,25 @@ test("applyMoves supports B and records when requested", () => {
   const cube = new CubeEngine();
   cube.applyMoves("B B' B2", { record: true });
   expect(cube.getMoves(true)).toBe("B B' B B");
+});
+
+// The only face whose direct method had no test of its own: every other rotate*
+// is pinned by a full state matrix above, and B was only ever exercised through
+// notation. Pinning the wrapper against its own token keeps both paths honest.
+test("ROTATE B matches the B / B' notation tokens", () => {
+  const cases: Array<[boolean, string]> = [
+    [true, "B"],
+    [false, "B'"],
+  ];
+  for (const [clockwise, token] of cases) {
+    const direct = new CubeEngine();
+    direct.rotateB(clockwise);
+
+    const viaNotation = new CubeEngine();
+    viaNotation.applyMoves(token, { record: true });
+
+    expect(direct.state()).toEqual(viaNotation.state());
+    expect(direct.getMoves()).toBe(token);
+    expect(direct.isSolved()).toBe(false);
+  }
 });

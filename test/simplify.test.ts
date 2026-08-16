@@ -1,3 +1,5 @@
+import { describe, expect, test } from "bun:test";
+
 import { simplifyMoves } from "../src/index.js";
 
 describe("simplifyMoves - strings", () => {
@@ -66,5 +68,20 @@ describe("simplifyMoves - timed moves", () => {
       { m: "F", t: 400 },
       { m: "F'", t: 500 }, // not cancelled
     ]);
+  });
+});
+
+describe("simplifyMoves - non-sequence input", () => {
+  // TypeScript callers cannot reach this: the signature only accepts a string,
+  // a token array or timed moves. The guard exists so a JavaScript caller gets
+  // its value back untouched instead of a crash.
+  const loose = simplifyMoves as unknown as (moves: unknown) => unknown;
+
+  test("returns anything that is not a string or an array unchanged", () => {
+    const odd = { m: "R" };
+    expect(loose(null)).toBeNull();
+    expect(loose(undefined)).toBeUndefined();
+    expect(loose(42)).toBe(42);
+    expect(loose(odd)).toBe(odd);
   });
 });

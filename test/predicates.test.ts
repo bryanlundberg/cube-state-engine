@@ -1,5 +1,14 @@
-import { CubeEngine } from "../src/index.js";
+import { describe, expect, test } from "bun:test";
+
+import type {
+  Color,
+  CubeSize,
+  FaceName,
+  GoalName,
+  PredicateInput,
+} from "../src/index.js";
 import {
+  CubeEngine,
   getCubeGeometry,
   isCubeSolved,
   isLastLayerOriented,
@@ -7,11 +16,11 @@ import {
   isCrossComplete,
   isF2LComplete,
   matchesGoal,
-} from "../src/predicates.js";
+} from "../src/index.js";
 
 // Solved-cube color layout: U=W L=O F=G R=R B=B D=Y.
 // Builds an engine in a known state by applying `alg` to a solved cube.
-function at(alg, size = 3) {
+function at(alg: string, size: CubeSize = 3): CubeEngine {
   const e = new CubeEngine("", { size });
   if (alg) e.applyMoves(alg, { record: false });
   return e;
@@ -57,8 +66,9 @@ describe("input flexibility", () => {
   test("engine, state() object, and flat array agree", () => {
     const e = at(ALG_SUNE);
     const state = e.state();
-    const flat = [];
-    for (const name of ["UPPER", "LEFT", "FRONT", "RIGHT", "BACK", "DOWN"]) {
+    const flat: Color[] = [];
+    const faces: FaceName[] = ["UPPER", "LEFT", "FRONT", "RIGHT", "BACK", "DOWN"];
+    for (const name of faces) {
       for (const row of state[name]) for (const v of row) flat.push(v);
     }
     for (const input of [e, state, flat]) {
@@ -68,7 +78,7 @@ describe("input flexibility", () => {
   });
 
   test("rejects unsupported input", () => {
-    expect(() => isCubeSolved(42)).toThrow(TypeError);
+    expect(() => isCubeSolved(42 as unknown as PredicateInput)).toThrow(TypeError);
   });
 });
 
@@ -158,12 +168,15 @@ describe("matchesGoal dispatcher", () => {
   });
 
   test("custom predicate escape hatch (function or object.custom)", () => {
-    expect(matchesGoal(at(""), (e) => e.isSolved())).toBe(true);
-    expect(matchesGoal(at(ALG_U), { custom: (e) => e.isSolved() })).toBe(false);
+    expect(matchesGoal(at(""), (e) => (e as CubeEngine).isSolved())).toBe(true);
+    expect(matchesGoal(at(ALG_U), { custom: (e) => (e as CubeEngine).isSolved() })).toBe(false);
   });
 
   test("unknown goal throws", () => {
-    expect(() => matchesGoal(at(""), "banana")).toThrow(/Unknown goal/);
+    expect(() =>
+      // Deliberately ill-typed: the guard exists for JavaScript callers.
+      matchesGoal(at(""), "banana" as GoalName)
+    ).toThrow(/Unknown goal/);
   });
 });
 
