@@ -159,8 +159,20 @@ function pushToPlayer(move) {
   resyncPlayer();
 }
 
-function resyncPlayer() {
-  if (player) player.alg = cube.getMoves();
+/**
+ * Rebuild the player from the full history.
+ * @param {boolean} jump - Skip the animation and land on the final state.
+ *   Used for scrambles, where playing 20 moves back is noise, not feedback.
+ */
+function resyncPlayer(jump = false) {
+  if (!player) return;
+  player.alg = cube.getMoves();
+  if (!jump) return;
+  try {
+    player.timestamp = Infinity;
+  } catch {
+    /* older builds animate instead; harmless */
+  }
 }
 
 /* --------------------------------------------------------------------------
@@ -218,7 +230,7 @@ function isSameAxis(a, b) {
 $("#scramble-btn").addEventListener("click", () => {
   cube.reset();
   cube.applyMoves(randomScramble(), { record: true });
-  resyncPlayer();
+  resyncPlayer(true);
   render();
 });
 
@@ -231,13 +243,8 @@ $("#reset-btn").addEventListener("click", () => {
 let autoTimer = null;
 const autoBtn = $("#auto-btn");
 
-autoBtn.addEventListener("click", () => {
-  if (autoTimer) {
-    clearInterval(autoTimer);
-    autoTimer = null;
-    autoBtn.setAttribute("aria-pressed", "false");
-    return;
-  }
+function startAuto() {
+  if (autoTimer) return;
   autoBtn.setAttribute("aria-pressed", "true");
   autoTimer = setInterval(() => {
     const keys = Object.keys(KEYMAP);
@@ -245,6 +252,23 @@ autoBtn.addEventListener("click", () => {
     flashKey(key);
     doMove(KEYMAP[key]);
   }, 700);
+}
+
+function stopAuto() {
+  if (!autoTimer) return;
+  clearInterval(autoTimer);
+  autoTimer = null;
+  autoBtn.setAttribute("aria-pressed", "false");
+}
+
+autoBtn.addEventListener("click", () => {
+  if (autoTimer) stopAuto();
+  else startAuto();
+});
+
+// A manual turn means the visitor took over; stop shuffling under their hands.
+document.addEventListener("keydown", (e) => {
+  if (KEYMAP[e.key.toLowerCase()]) stopAuto();
 });
 
 document.addEventListener("keyup", (e) => {
@@ -388,5 +412,9 @@ if (player) {
   player.alg = "";
   if (reduceMotion) player.tempoScale = 8;
 }
+
+// The cube turns on its own from the first paint. Visitors who asked for
+// reduced motion get the still cube and can opt in with the button.
+if (!reduceMotion) startAuto();
 
 loadAnalysis();
