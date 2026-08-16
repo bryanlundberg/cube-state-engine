@@ -3,7 +3,7 @@ import {
   matchesGoal,
   simplifyMoves,
   analyzeSolution,
-} from "./src/index.js";
+} from "./dist/index.mjs";
 
 const cube = new CubeEngine();
 window.CubeEngine = cube; // handy for poking at it in the console
@@ -306,30 +306,30 @@ copyBtn.addEventListener("click", async () => {
 
 const fmt = (ms) => `${(ms / 1000).toFixed(2)}s`;
 
-function stagesFrom(result) {
-  const stages = [];
-  if (result.cross) {
-    stages.push({ name: `Cross (${result.cross.color})`, stage: "cross", ...result.cross });
-  }
-  for (const pair of result.f2l) {
-    stages.push({ name: `F2L ${pair.slot}`, stage: "f2l", ...pair });
-  }
-  if (result.oll) stages.push({ name: "OLL", stage: "oll", ...result.oll });
-  if (result.pll) stages.push({ name: "PLL", stage: "pll", ...result.pll });
+// The timeline has four tones. Each method's milestones map onto them in the
+// order they happen: build, build, last layer, finish.
+const STAGE_TONE = {
+  cross: "cross",
+  f2l: "f2l",
+  oll: "oll",
+  pll: "pll",
+  firstBlock: "cross",
+  secondBlock: "f2l",
+  cmll: "oll",
+  lse: "pll",
+};
 
-  // Roux solves report a different set of milestones.
-  if (!stages.length) {
-    const roux = [
-      ["First block", "cross", result.firstBlock],
-      ["Second block", "f2l", result.secondBlock],
-      ["CMLL", "oll", result.cmll],
-      ["LSE", "pll", result.lse],
-    ];
-    for (const [name, stage, rec] of roux) {
-      if (rec) stages.push({ name, stage, ...rec });
-    }
-  }
-  return stages;
+function stagesFrom(result) {
+  // `stages` is already the breakdown of whichever method was detected, so the
+  // page never branches on CFOP vs Roux.
+  return result.stages.map((s) => {
+    const face = s.meta.color ?? s.meta.side;
+    return {
+      ...s,
+      name: face ? `${s.label} (${face})` : s.label,
+      stage: STAGE_TONE[s.key] ?? "f2l",
+    };
+  });
 }
 
 function renderAnalysis(result, sourceLabel) {
