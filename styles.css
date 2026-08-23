@@ -437,6 +437,118 @@ twisty-player { width: min(100%, 17rem); height: 17rem; }
   color: var(--ink-muted);
 }
 
+/* --- solve replay --------------------------------------------------------- */
+
+.replay { display: grid; gap: 0.875rem; }
+.replay[data-phase="idle"] { opacity: 0.55; }
+
+.replay__track {
+  position: relative;
+  display: flex;
+  inline-size: 100%;
+  block-size: 1.5rem;
+  border: var(--rule);
+  background: var(--bg);
+  overflow: hidden;
+}
+.replay__seg {
+  min-inline-size: 2px;
+  background: var(--stage, var(--raised));
+  opacity: 0.28;
+  transition: opacity var(--med) var(--ease);
+}
+/* Hairlines between segments, never a trailing one: the playhead is the last
+   child of the track, so :last-child would miss. */
+.replay__seg + .replay__seg { border-left: 1px solid var(--bg); }
+.replay__seg[data-done="true"] { opacity: 1; }
+
+/* Where the solve is right now, not where a stage ended. */
+.replay__head {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  inline-size: 2px;
+  margin-inline-start: -1px;
+  background: var(--ink);
+  box-shadow: 0 0 8px oklch(0.97 0 0 / 0.6);
+}
+.replay[data-phase="scrambled"] .replay__head,
+.replay[data-phase="idle"] .replay__head { opacity: 0.35; }
+
+.steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr));
+  gap: 0.5rem;
+  padding: 0;
+  list-style: none;
+}
+.step {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.5rem 0.75rem;
+  border: var(--rule);
+  border-left: 2px solid var(--line);
+  background: var(--bg);
+  transition: border-color var(--med) var(--ease);
+}
+.step[data-state="active"] { border-left-color: var(--brand); }
+.step[data-state="done"]   { border-left-color: var(--ok); }
+
+.step__mark {
+  inline-size: 0.75rem;
+  block-size: 0.75rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 50%;
+  flex: none;
+  display: grid;
+  place-items: center;
+  transition: background-color var(--med) var(--ease), border-color var(--med) var(--ease);
+}
+.step[data-state="active"] .step__mark {
+  border-color: var(--brand);
+  animation: step-pulse 1.4s var(--ease) infinite;
+}
+.step[data-state="done"] .step__mark {
+  background: var(--ok);
+  border-color: var(--ok);
+}
+.step[data-state="done"] .step__mark::after {
+  content: "";
+  inline-size: 0.3125rem;
+  block-size: 0.5rem;
+  border: solid var(--bg);
+  border-width: 0 2px 2px 0;
+  transform: translateY(-1px) rotate(45deg);
+}
+
+@keyframes step-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 var(--brand-wash); }
+  50%      { box-shadow: 0 0 0 4px var(--brand-wash); }
+}
+
+.step__name {
+  font-family: var(--font-data);
+  font-size: var(--t-label);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  transition: color var(--med) var(--ease);
+}
+.step[data-state="active"] .step__name,
+.step[data-state="done"] .step__name { color: var(--ink); }
+
+.step__time {
+  margin-left: auto;
+  font-family: var(--font-data);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-faint);
+}
+.step[data-state="done"] .step__time { color: var(--ink); }
+
+.dot-sep { color: var(--line-strong); margin-inline: 0.375rem; }
+
 /* --- analyzer timeline ---------------------------------------------------- */
 
 .analysis { display: grid; gap: var(--gap); }
@@ -491,10 +603,10 @@ twisty-player { width: min(100%, 17rem); height: 17rem; }
 
 /* Stage colors are chrome, not cube state: a neutral ramp plus the brand for
    the final stage. Deliberately not the six face colors. */
-.tl [data-stage="cross"] { --stage: oklch(0.42 0.02 355); }
-.tl [data-stage="f2l"]   { --stage: oklch(0.52 0.06 355); }
-.tl [data-stage="oll"]   { --stage: oklch(0.62 0.12 355); }
-.tl [data-stage="pll"]   { --stage: var(--brand); }
+[data-stage="cross"] { --stage: oklch(0.42 0.02 355); }
+[data-stage="f2l"]   { --stage: oklch(0.52 0.06 355); }
+[data-stage="oll"]   { --stage: oklch(0.62 0.12 355); }
+[data-stage="pll"]   { --stage: var(--brand); }
 
 .summary {
   display: flex;
