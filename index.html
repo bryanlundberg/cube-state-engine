@@ -53,10 +53,13 @@
       <!-- ===================== live instrument ===================== -->
       <section class="shell section">
         <div class="section__head">
-          <h2>Turn the cube</h2>
+          <h2>Watch it solve</h2>
           <p class="prose">
-            The 3D view, the flat net and the checks below all read from one
-            <code>CubeEngine</code> instance. Press a key, or scramble it.
+            The page replays real recorded solves at their recorded speed. The
+            3D view, the flat net, the stage checklist and the predicate checks
+            below all read from one <code>CubeEngine</code> instance — every
+            tick is the engine reporting what it sees, move by move. Take over
+            whenever you like: press a key, or scramble it.
           </p>
         </div>
 
@@ -82,6 +85,30 @@
             </div>
             <div class="panel__body">
               <div class="net" id="net"></div>
+            </div>
+          </div>
+
+          <div class="panel rig__wide">
+            <div class="panel__bar">
+              <span class="label">Replay</span>
+              <span class="label">
+                <span id="replay-src">loading…</span>
+                <span class="dot-sep" aria-hidden="true">·</span>
+                <span id="replay-method">—</span>
+              </span>
+            </div>
+            <div class="panel__body">
+              <div class="replay" id="replay" data-phase="idle">
+                <div
+                  class="replay__track"
+                  id="replay-track"
+                  role="img"
+                  aria-label="Solve progress"
+                >
+                  <div class="replay__head" id="replay-head"></div>
+                </div>
+                <ol class="steps" id="steps" aria-live="polite"></ol>
+              </div>
             </div>
           </div>
 
@@ -132,12 +159,13 @@
                 <button class="btn" id="reset-btn" type="button">Reset cube</button>
                 <button
                   class="btn"
-                  id="auto-btn"
+                  id="play-btn"
                   type="button"
                   aria-pressed="false"
                 >
-                  Auto-turn
+                  Play solve
                 </button>
+                <button class="btn" id="speed-btn" type="button">1x</button>
               </div>
             </div>
             <div class="panel__body">
@@ -155,7 +183,7 @@
           <p class="prose">
             Hand <code>analyzeSolution()</code> a timed move list and it replays
             the solve, works out which method was used, and reports when each
-            stage finished. This is a real recorded solve from the test suite.
+            stage finished. This is the same solve playing above, as data.
           </p>
         </div>
         <div class="panel">
