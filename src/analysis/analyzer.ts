@@ -22,6 +22,7 @@ import type {
 import { FACE_LETTERS } from "../geometry/faces.js";
 import { crossDone } from "../predicates/stages.js";
 import { isSolvedFlat } from "../predicates/flat.js";
+import { isRotation } from "../notation/tokens.js";
 import { buildReplay } from "./replay.js";
 import { completionIndex, toStages } from "./milestones.js";
 import { emptyLegacyFields, toLegacyFields } from "./legacy.js";
@@ -64,12 +65,14 @@ export function analyzeSolution(
   const { size, seq, n, geo, snapshots, simplifiedMoves, unsupported } = replay;
 
   const total = n > 0 ? seq[n - 1].t : 0;
+  const turnCount = simplifiedMoves.filter((x) => !isRotation(x.m)).length;
   const report = (extra: Partial<SolveAnalysis> = {}): SolveAnalysis => ({
     size,
     method: "unknown",
     solved: replay.solved,
     total,
-    tps: total > 0 ? simplifiedMoves.length / (total / 1000) : 0,
+    tps: total > 0 ? turnCount / (total / 1000) : 0,
+    turnCount,
     moves: simplifiedMoves,
     stages: [],
     ...emptyLegacyFields(),
