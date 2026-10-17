@@ -185,6 +185,7 @@ const result = analyzeSolution([
   solved: true,
   total: 14371,
   tps: 5.08,
+  turnCount: 73,
   startFace: { face: "D", color: "W" },
   cross: { color: "W", at: 2340, duration: 2340, moveIndex: 14, move: "U'" },
   f2l: [
@@ -200,6 +201,7 @@ const result = analyzeSolution([
 
 - **Detects CFOP and Roux automatically.** Roux solves come back with `firstBlock`, `secondBlock`, `cmll` and `lse` instead (each block noting the `side` color it was built on). When neither staging fits, `method` is `"unknown"` and the timing fields are `null`.
 - **`startFace`** names the face the solve was started from, the same way for every method: the cross face on CFOP, the first block's face on Roux. `face` is one of `U` `L` `F` `R` `B` `D` (its position at the end of the solve, so rotations mid-solve don't change it) and `color` is that face's center color. `null` when no staging was detected.
+- **`turnCount`** counts the turns in the simplified solution; whole-cube rotations (`x`, `y`, `z`) are not turns, so they are left out of it and out of `tps`. `moves` still lists them, so the solution reads the way it was performed.
 - **`allCrosses`** reports when the cross completed on *every* face color, not just the one you used.
 - **`unsupported`** lists any move tokens it couldn't parse, so bad timings never pass silently.
 
