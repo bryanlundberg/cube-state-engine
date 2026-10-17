@@ -38,6 +38,12 @@ export function normalizeToken(raw: string): NormalizedToken {
   return { token: base + m[2], base };
 }
 
+/** Whether a token is a whole-cube rotation (x, y, z), which is not a turn. */
+export function isRotation(raw: string): boolean {
+  const { base } = normalizeToken(raw);
+  return base === "x" || base === "y" || base === "z";
+}
+
 /** Inverts a single move token (R -> R', R' -> R, R2 -> R2). */
 export function invertToken(tok: string): string {
   if (tok.endsWith("2")) return tok;
