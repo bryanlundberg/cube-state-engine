@@ -185,6 +185,57 @@ describe("analyzeSolution - real solve data quirks", () => {
   });
 });
 
+describe("analyzeSolution - turnCount and tps", () => {
+  test("is zero for an empty solution", () => {
+    const out = analyzeSolution([]);
+    expect(out.turnCount).toBe(0);
+    expect(out.tps).toBe(0);
+  });
+
+  test("leaves rotations out of turnCount and tps but keeps them in moves", () => {
+    const out = analyzeSolution([
+      { m: "y", t: 0 },
+      { m: "F2", t: 100 },
+      { m: "U", t: 200 },
+      { m: "x'", t: 250 },
+      { m: "R", t: 300 },
+      { m: "U'", t: 400 },
+      { m: "R'", t: 500 },
+    ]);
+    expect(out.moves.map((x) => x.m)).toEqual(["y", "F2", "U", "x'", "R", "U'", "R'"]);
+    expect(out.turnCount).toBe(5);
+    expect(out.total).toBe(500);
+    expect(out.tps).toBe(10);
+  });
+
+  test("counts slices and wide moves as turns, double rotations as none", () => {
+    const out = analyzeSolution([
+      { m: "M", t: 100 },
+      { m: "r", t: 200 },
+      { m: "y2", t: 300 },
+      { m: "z", t: 350 },
+      { m: "z", t: 400 },
+      { m: "E'", t: 500 },
+    ]);
+    expect(out.moves.map((x) => x.m)).toEqual(["M", "r", "y2", "z2", "E'"]);
+    expect(out.turnCount).toBe(3);
+  });
+
+  test.each<[string, TimedMove[]]>([
+    ["cfop-1", cfop1.replay.moves],
+    ["cfop-2", cfop2.replay.moves],
+    ["roux-1", roux1.replay.moves],
+    ["roux-2", roux2.replay.moves],
+    ["roux-3", roux3.replay.moves],
+    ["roux-4", roux4.replay.moves],
+  ])("tps is turnCount over total for %s", (_name, moves) => {
+    const out = analyzeSolution(moves);
+    expect(out.turnCount).toBeGreaterThan(0);
+    expect(out.turnCount).toBeLessThanOrEqual(out.moves.length);
+    expect(out.tps).toBeCloseTo(out.turnCount / (out.total / 1000));
+  });
+});
+
 describe("geometry derivation", () => {
   // The analyzer derives cube geometry internally; we validate it indirectly by
   // confirming a solved cube reports a complete cross for all six colors.
