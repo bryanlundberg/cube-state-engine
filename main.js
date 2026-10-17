@@ -406,7 +406,7 @@ function renderAnalysis(solve) {
     `<p class="summary">` +
     `<span>Method <b>${result.method}</b></span>` +
     `<span>Total <b>${fmt(result.total)}</b></span>` +
-    `<span>Moves <b>${result.moves.length}</b></span>` +
+    `<span>Moves <b>${result.turnCount}</b></span>` +
     `<span>TPS <b>${result.tps.toFixed(2)}</b></span>` +
     `<span>Solved <b>${result.solved}</b></span>` +
     `</p>`;
