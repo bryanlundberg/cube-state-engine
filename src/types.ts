@@ -208,8 +208,11 @@ export interface SolveAnalysis {
   solved: boolean;
   /** Total elapsed ms. */
   total: number;
-  /** Turns per second, over the simplified move count. */
+  /** Turns per second: `turnCount` over `total`. */
   tps: number;
+  /** Turns in the simplified solution, not counting x/y/z rotations. */
+  turnCount: number;
+  /** The simplified solution, rotations included. */
   moves: TimedMove[];
   /** The breakdown of whichever method was detected. */
   stages: Stage[];
